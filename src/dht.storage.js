@@ -23,6 +23,7 @@ class DHTStorage {
       }
     });    
   }
+  
   store(channel,address,node) {
     //console.log('DHTStorage::store address=<',address,'>');
     //console.log('DHTStorage::store address=<',address,'>');
@@ -36,6 +37,7 @@ class DHTStorage {
     };
     this.channel_.insertOne(msgStore);
   }
+  
   fetch(address,cb) {
     //console.log('DHTStorage::fetch address=<',address,'>');
     const findFilter = {
@@ -49,12 +51,20 @@ class DHTStorage {
     });
   }
 
-  onMongoCreated_() {
-    this.pubsubdb_ = this.mongo_.db('dht_pubsub');    
-    //console.log('DHTStorage::onMongoCreated_:this.pubsubdb_=<', this.pubsubdb_,'>');
-    this.channel_ = this.pubsubdb_.collection('channel');
-    //console.log('DHTStorage::onMongoCreated_:this.channel_=<', this.channel_,'>');
-    this.channel_.drop();
+  async onMongoCreated_() {
+    try {
+      this.pubsubdb_ = this.mongo_.db('dht_pubsub');    
+      //console.log('DHTStorage::onMongoCreated_:this.pubsubdb_=<', this.pubsubdb_,'>');
+      this.channel_ = this.pubsubdb_.collection('channel');
+      //console.log('DHTStorage::onMongoCreated_:this.channel_=<', this.channel_,'>');
+      const savedChannels = await this.channel_.countDocuments();
+      //console.log('DHTStorage::onMongoCreated_:savedChannels_=<', savedChannels,'>');
+      if(savedChannels > 0) {
+        this.channel_.drop();
+      }
+    } catch( err ) {
+      console.log('DHTStorage::onMongoCreated_:err=<', err,'>');
+    }
   }
 }
 module.exports = DHTStorage;
