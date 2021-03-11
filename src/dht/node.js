@@ -33,8 +33,7 @@ class DHTNode {
     signedMsg.p = msg;
     signedMsg.t = this.config_.trap;
     signedMsg.s = {};
-    signedMsg.s.t = now.toGMTString();
-    signedMsg.s.m = now.getMilliseconds();
+    signedMsg.s.t = now.toISOString();
     signedMsg.s.k = this.keyMaster.publicKey;
     
     let msgStr = JSON.stringify(signedMsg);
@@ -50,7 +49,6 @@ class DHTNode {
   verify(msgJson) {
     const now = new Date();
     const msgTs = new Date(msgJson.s.t);
-    msgTs.setMilliseconds(msgJson.s.m)
     const escape_time = now -msgTs;
     //console.log('DHTNode::verify escape_time=<',escape_time,'>');
     if(escape_time > iConstMessageOutDateInMs) {
