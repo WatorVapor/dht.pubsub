@@ -86,10 +86,10 @@ class DHTBroker {
       this.onApiClient(msg.client,msg.cb);
     } else if(msg.ping) {
       this.onApiPing(msg.at,msg.cb)
-    } else if(msg.subscribe) {
-      this.onApiSubscribe(msg.subscribe,msg.cb)
-    } else if(msg.publish) {
-      this.onApiPublish(msg.publish,msg.cb)
+    } else if(msg.spread) {
+      this.onApiSpread(msg.spread,msg.cid,msg.cb)
+    } else if(msg.deliver) {
+      this.onApiDeliver(msg.deliver,msg.pid,msg.cb)
     } else {
       console.log('DHTBroker::onApiMsg:msg=<',msg,'>');
     }
@@ -100,15 +100,15 @@ class DHTBroker {
     this.api_cbs_[cb] = {path:path,at:(new Date()).toISOString()};
     //console.log('DHTBroker::onApiClient:this.api_cbs_=<',this.api_cbs_,'>');
     for(const cbKey in this.api_cbs_) {
-      console.log('DHTBroker::onApiClient:cbKey=<',cbKey,'>');
+      //console.log('DHTBroker::onApiClient:cbKey=<',cbKey,'>');
       const api_cb = this.api_cbs_[cbKey];
       const escape_ms = new Date() - new Date(api_cb.at);
-      console.log('DHTBroker::onApiClient:escape_ms=<',escape_ms,'>');
+     // console.log('DHTBroker::onApiClient:escape_ms=<',escape_ms,'>');
       if(escape_ms > 5000) {
         delete this.api_cbs_[cbKey];
       }
     }
-    console.log('DHTBroker::onApiClient:this.api_cbs_=<',this.api_cbs_,'>');
+    //console.log('DHTBroker::onApiClient:this.api_cbs_=<',this.api_cbs_,'>');
   }
   onApiPing(atSent,cb) {
     //console.log('DHTBroker::onApiPing:cb=<',cb,'>');
@@ -121,6 +121,24 @@ class DHTBroker {
       this.api_.send({pong:new Date,sent:atSent},reply.path);
     }
   }
+  onApiSpread(spread,cid,cb) {
+    console.log('DHTBroker::onApiSpread:spread=<',spread,'>');
+    console.log('DHTBroker::onApiSpread:cid=<',cid,'>');
+    console.log('DHTBroker::onApiSpread:cb=<',cb,'>');
+    const outgates = this.bucket_.near(cid);
+    console.log('DHTBroker::onApiSpread:outgates=<',outgates,'>');
+    this.dht_udp_.spread(outgates,spread,cid,cb);
+
+  }
+  onApiDeliver(deliver,pid,cb) {
+    console.log('DHTBroker::onApiSpread:deliver=<',deliver,'>');
+    console.log('DHTBroker::onApiSpread:pid=<',pid,'>');
+    console.log('DHTBroker::onApiSpread:cb=<',cb,'>');
+  }
+
+
+
+
 
   onApiSubscribe(channel,cb) {
     //console.log('DHTBroker::onApiSubscribe:channel=<',channel,'>');

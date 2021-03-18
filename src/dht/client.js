@@ -23,10 +23,17 @@ class DHTClient {
     this.api_.doPing({ping:client2broker,at:new Date(),cb:broker2client_cb});
     this.send_({client:broker2client});
   }
-  publish(channel,msg) {
-    console.log('DHTClient::publish: channel =<',channel,'>');
-    console.log('DHTClient::publish: msg =<',msg,'>');
-    this.send_({publish:{c:channel,m:msg}});
+  cid(content) {
+    return utils.calcAddress(content);
+  }
+
+  spread(msg,cid) {
+    console.log('DHTClient::spread: msg =<',msg,'>');
+    this.send_({spread:{m:msg},cid:cid});
+  }
+  deliver(msg,pid) {
+    console.log('DHTClient::deliver: msg =<',msg,'>');
+    this.send_({deliver:{m:msg},pid:pid});
   }
 
 

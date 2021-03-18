@@ -80,6 +80,44 @@ class DHTUdp {
       console.log('DHTUdp::send:err=<',err,'>');
     }
   }
+  
+  
+  spread(outgates,spread,cid,cb) {
+    //console.log('DHTUdp::spread: outgates =<',outgates,'>');
+    const msgDHT = {
+      cid:cid,
+      spread:spread,
+      footprint:[
+        this.node_.id
+      ]
+    }
+    const outEPs = {};
+    let isDone = false;
+    for(const gate of outgates) {
+      //console.log('DHTUdp::spread: gate =<',gate,'>');
+      if(this.node_.id !== gate) {
+        outEPs[gate] = this.worldNodes_[gate];
+      } else {
+        if(isDone === false) {
+          this.onSpread2Me(spread,cid,cb);
+        }
+        isDone = true;
+      }
+    }
+    //console.log('DHTUdp::spread: outEPs =<',outEPs,'>');
+    for(const outEPIndex in outEPs) {
+      const outEP = outEPs[outEPIndex];
+      //console.log('DHTUdp::spread: outEP =<',outEP,'>');
+      this.send(msgDHT,outEP.portd,outEP.address);
+    }
+  }
+  onSpread2Me(spread,cid,cb) {
+    console.log('DHTUdp::onSpread2Me: spread =<',spread,'>');
+    console.log('DHTUdp::onSpread2Me: cid =<',cid,'>');
+    console.log('DHTUdp::onSpread2Me: cb =<',cb,'>');
+  }
+  
+  
   broadcastSubscribe(outgates,channel,address) {
     //console.log('DHTUdp::broadcastSubscribe: outgates =<',outgates,'>');
     //console.log('DHTUdp::broadcastSubscribe: channel =<',channel,'>');
