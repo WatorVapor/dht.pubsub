@@ -17,16 +17,21 @@ class DHTClient {
     }
     const self = this;
     this.api_ = new ApiUnxiUdp((msg)=>{
-      self.onApiMsg(msg);
+      self.onBrokerMsg(msg);
     });
     this.api_.bindUnixSocket(broker2client);
     this.api_.doPing({ping:client2broker,at:new Date(),cb:broker2client_cb});
     this.send_({client:broker2client});
+    this.send_({peer:{}});
   }
   cid(content) {
     return utils.calcAddress(content);
   }
-
+  pidOfMe() {
+    if(this.broker_) {
+      return this.broker_.id;
+    }
+  }
   spread(msg,cid) {
     console.log('DHTClient::spread: msg =<',msg,'>');
     this.send_({spread:{m:msg},cid:cid});
@@ -36,16 +41,15 @@ class DHTClient {
     this.send_({deliver:{m:msg},pid:pid});
   }
 
-
-
-  onApiMsg(msg) {
-    //console.log('DHTClient::onApiMsg:msg=<',msg,'>');
+  onBrokerMsg(msg) {
+    //console.log('DHTClient::onBrokerMsg:msg=<',msg,'>');
     if(msg.pong) {
       this.onBrokerPong(msg.pong,msg.sent);
+    } else if(msg.peer) {
+      this.onBrokerPeer(msg.peer);
     } else if(msg.ping) {
-    } else if(msg.subscribe) {
     } else {
-      console.log('DHTClient::onApiMsg:msg=<',msg,'>');
+      console.log('DHTClient::onBrokerMsg:msg=<',msg,'>');
     }
   }
   
@@ -54,6 +58,11 @@ class DHTClient {
     //console.log('DHTClient::onBrokerPong:sentAt=<',sentAt,'>');
     const escape_ms = new Date() - new Date(sentAt);
     //console.log('DHTClient::onBrokerPong:escape_ms=<',escape_ms,'>');
+  }
+
+  onBrokerPeer(peer) {
+    //console.log('DHTClient::onBrokerPeer:peer=<',peer,'>');
+    this.broker_ = peer;
   }
 
   send_(cmd) {

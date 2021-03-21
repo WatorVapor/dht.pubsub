@@ -48,20 +48,6 @@ class DHTBroker {
       console.log('DHTUdp::onDataMsg_:nodeFrom=<',nodeFrom,'>');
     }
   }
-  onDHTSubscribe_(subscribe,remote,from) {
-    console.log('DHTBroker::onDHTSubscribe_:subscribe=<',subscribe,'>');
-    console.log('DHTBroker::onDHTSubscribe_:remote=<',remote,'>');
-    console.log('DHTBroker::onDHTSubscribe_:from=<',from,'>');
-    const relayGates = this.findRelayGates_(subscribe);
-    console.log('DHTBroker::onDHTSubscribe_:relayGates=<',relayGates,'>');
-  }
-  onDHTPublish_(publish,remote,from) {
-    console.log('DHTBroker::onDHTPublish_:publish=<',publish,'>');
-    console.log('DHTBroker::onDHTPublish_:remote=<',remote,'>');
-    console.log('DHTBroker::onDHTPublish_:from=<',from,'>');    
-    const relayGates = this.findRelayGates_(publish);
-    console.log('DHTBroker::onDHTPublish_:relayGates=<',relayGates,'>');
-  }
   
   findRelayGates_(relayMsg) {
     const outgates = this.bucket_.near(relayMsg.address);
@@ -84,12 +70,14 @@ class DHTBroker {
     //console.log('DHTBroker::onApiMsg:msg=<',msg,'>');
     if(msg.client) {
       this.onApiClient(msg.client,msg.cb);
+    } else if(msg.peer) {
+      this.onApiPeer(msg.cb);
     } else if(msg.ping) {
-      this.onApiPing(msg.at,msg.cb)
+      this.onApiPing(msg.at,msg.cb);
     } else if(msg.spread) {
-      this.onApiSpread(msg.spread,msg.cid,msg.cb)
+      this.onApiSpread(msg.spread,msg.cid,msg.cb);
     } else if(msg.deliver) {
-      this.onApiDeliver(msg.deliver,msg.pid,msg.cb)
+      this.onApiDeliver(msg.deliver,msg.pid,msg.cb);
     } else {
       console.log('DHTBroker::onApiMsg:msg=<',msg,'>');
     }
@@ -109,6 +97,16 @@ class DHTBroker {
       }
     }
     //console.log('DHTBroker::onApiClient:this.api_cbs_=<',this.api_cbs_,'>');
+  }
+  onApiPeer(cb) {
+    //console.log('DHTBroker::onApiPeer:cb=<',cb,'>');
+    //console.log('DHTBroker::onApiPeer:this.api_cbs_=<',this.api_cbs_,'>');    
+    const reply = this.api_cbs_[cb];
+    if(reply) {
+      //console.log('DHTBroker::onApiPeer:reply=<',reply,'>');
+      //console.log('DHTBroker::onApiPeer:atSent=<',atSent,'>');
+      this.api_.send({peer:{id:this.node_.id}},reply.path);
+    }
   }
   onApiPing(atSent,cb) {
     //console.log('DHTBroker::onApiPing:cb=<',cb,'>');
@@ -131,93 +129,13 @@ class DHTBroker {
 
   }
   onApiDeliver(deliver,pid,cb) {
-    console.log('DHTBroker::onApiSpread:deliver=<',deliver,'>');
-    console.log('DHTBroker::onApiSpread:pid=<',pid,'>');
-    console.log('DHTBroker::onApiSpread:cb=<',cb,'>');
+    console.log('DHTBroker::onApiDeliver:deliver=<',deliver,'>');
+    console.log('DHTBroker::onApiDeliver:pid=<',pid,'>');
+    console.log('DHTBroker::onApiDeliver:cb=<',cb,'>');
+    const outgates = this.bucket_.near(pid);
+    console.log('DHTBroker::onApiDeliver:outgates=<',outgates,'>');
+    this.dht_udp_.deliver(outgates,deliver,pid,cb);
   }
-
-
-
-
-
-  onApiSubscribe(channel,cb) {
-    //console.log('DHTBroker::onApiSubscribe:channel=<',channel,'>');
-    //console.log('DHTBroker::onApiSubscribe:cb=<',cb,'>');
-    const address = utils.calcAddress(channel);
-    //console.log('DHTBroker::onApiSubscribe:address=<',address,'>');
-    if(!this.localChannels_[address]) {
-      this.localChannels_[address] = [];
-    }
-    this.localChannels_[address].push({channel:channel,cb:cb,at:new Date()});
-    this.doDHTSubscribe_(address,channel);
-  }
-  doDHTSubscribe_(address,channel) {
-    const outgates = this.bucket_.near(address);
-    //console.log('DHTBroker::onApiSubscribe:outgates=<',outgates,'>');
-    if(outgates.includes(this.node_.id)) {
-      this.storage_.store(channel,address,this.node_.id);      
-    }
-    this.dht_udp_.broadcastSubscribe(outgates,channel,address);
-  }
-  onApiPublish(publish,cb) {
-    //console.log('DHTBroker::onApiPublish:publish=<',publish,'>');
-    const channel = publish.c;
-    const message = publish.m;
-    //console.log('DHTBroker::onApiPublish:channel=<',channel,'>');
-    //console.log('DHTBroker::onApiPublish:message=<',message,'>');
-    const address = utils.calcAddress(channel);
-    //console.log('DHTBroker::onApiPublish:address=<',address,'>');
-    const channelLocals = this.localChannels_[address];
-    if(channelLocals) {
-      for(const channelLocal of channelLocals) {
-        //console.log('DHTBroker::onApiPublish:channelLocal=<',channelLocal,'>');
-        const toPath = `/dev/shm/dht.pubsub.DHTBroker2client.${channelLocal.cb}.sock`;
-        //console.log('DHTBroker::onApiPublish:toPath=<',toPath,'>');
-        const api_cb = this.api_cbs_[channelLocal.cb];
-        if(api_cb) {
-          this.api_.send({publisher:publish,at:new Date()},toPath);
-        } else {
-          const index = this.localChannels_[address].indexOf(channelLocal);
-          //console.log('DHTBroker::onApiPublish:index=<',index,'>');
-          if(index > -1) {
-            this.localChannels_[address].splice(index,1);
-          }
-        }
-      }
-    }
-    this.doDHTPublish_(address,channel,message,cb);
-  }
-  doDHTPublish_(address,channel,message,cb) {
-    console.log('DHTBroker::doDHTPublish_:address=<',address,'>');
-    console.log('DHTBroker::doDHTPublish_:channel=<',channel,'>');
-    console.log('DHTBroker::doDHTPublish_:message=<',message,'>');
-    console.log('DHTBroker::doDHTPublish_:cb=<',cb,'>');
-    const outgates = this.bucket_.near(address);
-    //console.log('DHTBroker::onApiSubscribe:outgates=<',outgates,'>');
-    if(outgates.includes(this.node_.id)) {
-      const self = this;
-      this.storage_.fetch(address,(endpoint)=> {
-        self.onDHTSubscribeHint_(endpoint,message,channel,cb);
-      });
-    }
-    this.dht_udp_.broadcastPublish(outgates,channel,address,message,cb);    
-  }
-
-  onDHTSubscribeHint_(endpoints,msgPub,channel,cb) {
-    console.log('DHTUdp::onDHTSubscribeHint_:endpoints=<',endpoints,'>');
-    console.log('DHTUdp::onDHTSubscribeHint_:msgPub=<',msgPub,'>');
-    for(const endpoint of endpoints) {
-      const msgDHT = {
-        pubReal:{
-          channel:channel,
-          msg:msgPub,
-          cb,cb
-        },
-        dist:endpoint.node
-      }
-      console.log('DHTUdp::onDHTSubscribeHint_:msgDHT=<',msgDHT,'>');
-    }
-  }
-  
+ 
 };
 module.exports = DHTBroker;

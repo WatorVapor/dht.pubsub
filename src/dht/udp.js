@@ -116,6 +116,42 @@ class DHTUdp {
     console.log('DHTUdp::onSpread2Me: cid =<',cid,'>');
     console.log('DHTUdp::onSpread2Me: cb =<',cb,'>');
   }
+
+  deliver(outgates,deliver,pid,cb) {
+    //console.log('DHTUdp::deliver: outgates =<',outgates,'>');
+    const msgDHT = {
+      pid:pid,
+      deliver:deliver,
+      footprint:[
+        this.node_.id
+      ]
+    }
+    const outEPs = {};
+    let isDone = false;
+    for(const gate of outgates) {
+      //console.log('DHTUdp::deliver: gate =<',gate,'>');
+      if(this.node_.id !== gate) {
+        outEPs[gate] = this.worldNodes_[gate];
+      } else {
+        if(isDone === false) {
+          this.onDeliver2Me(deliver,pid,cb);
+        }
+        isDone = true;
+      }
+    }
+    //console.log('DHTUdp::deliver: outEPs =<',outEPs,'>');
+    for(const outEPIndex in outEPs) {
+      const outEP = outEPs[outEPIndex];
+      //console.log('DHTUdp::deliver: outEP =<',outEP,'>');
+      this.send(msgDHT,outEP.portd,outEP.address);
+    }
+  }
+  onDeliver2Me(deliver,pid,cb) {
+    console.log('DHTUdp::onDeliver2Me: deliver =<',deliver,'>');
+    console.log('DHTUdp::onDeliver2Me: pid =<',pid,'>');
+    console.log('DHTUdp::onDeliver2Me: cb =<',cb,'>');
+  }
+
   
   
   broadcastSubscribe(outgates,channel,address) {
