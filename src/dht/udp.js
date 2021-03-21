@@ -151,67 +151,7 @@ class DHTUdp {
     console.log('DHTUdp::onDeliver2Me: pid =<',pid,'>');
     console.log('DHTUdp::onDeliver2Me: cb =<',cb,'>');
   }
-
-  
-  
-  broadcastSubscribe(outgates,channel,address) {
-    //console.log('DHTUdp::broadcastSubscribe: outgates =<',outgates,'>');
-    //console.log('DHTUdp::broadcastSubscribe: channel =<',channel,'>');
-    const msgDHT = {
-      subscribe:{
-        channel:channel,
-        address:address,
-        node:this.node_.id,
-        footprint:[
-          this.node_.id
-        ]
-      }
-    }
-    const outEPs = {};
-    for(const gate of outgates) {
-      //console.log('DHTUdp::broadcastSubscribe: gate =<',gate,'>');
-      if(this.node_.id !== gate) {
-        outEPs[gate] = this.worldNodes_[gate];
-      }
-    }
-    //console.log('DHTUdp::broadcastSubscribe: outEPs =<',outEPs,'>');
-    for(const outEPIndex in outEPs) {
-      const outEP = outEPs[outEPIndex];
-      //console.log('DHTUdp::broadcastSubscribe: outEP =<',outEP,'>');
-      this.send(msgDHT,outEP.portd,outEP.address);
-    }
-  }
-
-  broadcastPublish(outgates,channel,address,msg,cb) {
-    //console.log('DHTUdp::broadcastPublish: outgates =<',outgates,'>');
-    //console.log('DHTUdp::broadcastPublish: channel =<',channel,'>');
-    const msgDHT = {
-      publish:{
-        channel:channel,
-        address:address,
-        msg:msg,
-        cb,cb,
-        footprint:[
-          this.node_.id
-        ]
-      }
-    }
-    const outEPs = {};
-    for(const gate of outgates) {
-      //console.log('DHTUdp::broadcastPublish: gate =<',gate,'>');
-      if(this.node_.id !== gate) {
-        outEPs[gate] = this.worldNodes_[gate];
-      }
-    }
-    //console.log('DHTUdp::broadcastPublish: outEPs =<',outEPs,'>');
-    for(const outEPIndex in outEPs) {
-      const outEP = outEPs[outEPIndex];
-      //console.log('DHTUdp::broadcastPublish: outEP =<',outEP,'>');
-      this.send(msgDHT,outEP.portd,outEP.address);
-    }
-  }
-
-  
+ 
   enterMesh_() {
     //console.log('DHTUdp::enterMesh_: this.conf_ =<',this.conf_,'>');
     for(const entrance of this.conf_.entrances) {
