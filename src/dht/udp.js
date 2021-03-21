@@ -56,7 +56,7 @@ class DHTUdp {
       //console.log('DHTUdp::bindSocket: message remote =<',remote,'>');
       try {
         const jMsg = JSON.parse(message.toString());
-        console.log('DHTUdp::bindSocket: message result =<',result,'>');
+        console.log('DHTUdp::bindSocket: message jMsg =<',jMsg,'>');
         const result = this.node_.verify(jMsg);
         console.log('DHTUdp::bindSocket: message result =<',result,'>');
         if(result) {

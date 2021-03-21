@@ -6,6 +6,7 @@ const deliverPayload = {
   msg:'hello world'
 }
 setTimeout(()=>{
-  const pid = client.pidOfMe();
+  //const pid = client.pidOfMe();
+  const pid = 'mfs6bsc2877wjbwqpazm5kyzk7k9342c';
   client.deliver(deliverPayload,pid);  
 },1000);

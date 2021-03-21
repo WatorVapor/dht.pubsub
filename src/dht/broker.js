@@ -31,7 +31,7 @@ class DHTBroker {
       self.onDHTDataMsg(msg,remote,node);
     });
     this.dht_udp_.bindSocket(conf.portc,conf.portd);
-    this.storage_ = new DHTStorage(conf); 
+    //this.storage_ = new DHTStorage(conf); 
   }
 
   onDHTDataMsg(msg,remote,nodeFrom) {
