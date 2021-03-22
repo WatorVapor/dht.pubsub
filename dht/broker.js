@@ -7,7 +7,6 @@ const DHTUdp = require('./udp.js');
 const DHTNode = require('./node.js');
 const DHTBucket = require('./bucket.js');
 const DHTUtils = require('./utils.js');
-const DHTStorage = require('./storage.js');
 const utils = new DHTUtils();
 
 const client2DHTBroker = '/dev/shm/dht.client2broker.sock';
@@ -31,7 +30,6 @@ class DHTBroker {
       self.onDHTDataMsg(msg,remote,node);
     });
     this.dht_udp_.bindSocket(conf.portc,conf.portd);
-    //this.storage_ = new DHTStorage(conf); 
   }
 
   onDHTDataMsg(msg,remote,nodeFrom) {
