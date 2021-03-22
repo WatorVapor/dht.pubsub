@@ -33,18 +33,25 @@ class DHTBroker {
   }
 
   onDHTDataMsg(msg,remote,nodeFrom) {
-    console.log('DHTBroker::onDHTDataMsg:msg=<',msg,'>');
-    console.log('DHTBroker::onDHTDataMsg:remote=<',remote,'>');
-    console.log('DHTBroker::onDHTDataMsg:nodeFrom=<',nodeFrom,'>');
-    if(msg.subscribe) {
-      this.onDHTSubscribe_(msg.subscribe,remote,nodeFrom);
-    } else if(msg.publish) {
-      this.onDHTPublish_(msg.publish,remote,nodeFrom);
+    //console.log('DHTBroker::onDHTDataMsg:msg=<',msg,'>');
+    //console.log('DHTBroker::onDHTDataMsg:remote=<',remote,'>');
+    //console.log('DHTBroker::onDHTDataMsg:nodeFrom=<',nodeFrom,'>');
+    if(msg.spread) {
+      this.onDHTSpread_(msg.spread);
+    } else if(msg.deliver) {
+      this.onDHTDeliver_(msg.deliver);
     } else {
       console.log('DHTBroker::onDataMsg_:msg=<',msg,'>');
-      console.log('DHTUdp::onDataMsg_:remote=<',remote,'>');
-      console.log('DHTUdp::onDataMsg_:nodeFrom=<',nodeFrom,'>');
+      console.log('DHTBroker::onDataMsg_:remote=<',remote,'>');
+      console.log('DHTBroker::onDataMsg_:nodeFrom=<',nodeFrom,'>');
     }
+  }
+  
+  onDHTSpread_(dhtMsg) {
+    console.log('DHTBroker::onDHTSpread_:dhtMsg=<',dhtMsg,'>');
+  }
+  onDHTDeliver_(dhtMsg) {
+    console.log('DHTBroker::onDHTDeliver_:dhtMsg=<',dhtMsg,'>');
   }
   
   findRelayGates_(relayMsg) {

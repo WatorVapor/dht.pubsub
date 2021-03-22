@@ -87,6 +87,7 @@ class DHTUdp {
     const msgDHT = {
       cid:cid,
       spread:spread,
+      cb:cb,
       footprint:[
         this.node_.id
       ]
@@ -99,7 +100,7 @@ class DHTUdp {
         outEPs[gate] = this.worldNodes_[gate];
       } else {
         if(isDone === false) {
-          this.onSpread2Me(spread,cid,cb);
+          this.onSpread2Me(msgDHT);
         }
         isDone = true;
       }
@@ -111,10 +112,11 @@ class DHTUdp {
       this.send(msgDHT,outEP.portd,outEP.address);
     }
   }
-  onSpread2Me(spread,cid,cb) {
-    console.log('DHTUdp::onSpread2Me: spread =<',spread,'>');
-    console.log('DHTUdp::onSpread2Me: cid =<',cid,'>');
-    console.log('DHTUdp::onSpread2Me: cb =<',cb,'>');
+  onSpread2Me(msgDHT) {
+    console.log('DHTUdp::onSpread2Me: msgDHT =<',msgDHT,'>');
+    if(typeof this.onMsg_ === 'function') {
+      this.onMsg_(msgDHT);
+    }
   }
 
   deliver(outgates,deliver,pid,cb) {
@@ -122,6 +124,7 @@ class DHTUdp {
     const msgDHT = {
       pid:pid,
       deliver:deliver,
+      cb:cb,
       footprint:[
         this.node_.id
       ]
@@ -134,7 +137,7 @@ class DHTUdp {
         outEPs[gate] = this.worldNodes_[gate];
       } else {
         if(isDone === false) {
-          this.onDeliver2Me(deliver,pid,cb);
+          this.onDeliver2Me(msgDHT);
         }
         isDone = true;
       }
@@ -146,10 +149,11 @@ class DHTUdp {
       this.send(msgDHT,outEP.portd,outEP.address);
     }
   }
-  onDeliver2Me(deliver,pid,cb) {
-    console.log('DHTUdp::onDeliver2Me: deliver =<',deliver,'>');
-    console.log('DHTUdp::onDeliver2Me: pid =<',pid,'>');
-    console.log('DHTUdp::onDeliver2Me: cb =<',cb,'>');
+  onDeliver2Me(msgDHT) {
+    console.log('DHTUdp::onDeliver2Me: msgDHT =<',msgDHT,'>');
+    if(typeof this.onMsg_ === 'function') {
+      this.onMsg_(msgDHT);
+    }
   }
  
   enterMesh_() {
