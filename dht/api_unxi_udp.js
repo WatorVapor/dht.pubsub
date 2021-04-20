@@ -41,7 +41,7 @@ class ApiUnxiUdp {
     try {
       this.client_.send(cmdMsg, 0, cmdMsg.length, toPath);
     } catch(err) {
-      console.log('ApiUnxiUdp::send:err=<',err,'>');
+      //console.log('ApiUnxiUdp::send:err=<',err,'>');
     }
   }
   

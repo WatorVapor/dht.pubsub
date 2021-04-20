@@ -121,8 +121,6 @@ class DHTBucket {
     nearGate.push(near3);
     return nearGate;
   }
-
-
   calcDistance_(address,peer) {
     //console.log('PeerRoute::calcDistance_ address=<',address,'>');
     //console.log('PeerRoute::calcDistance_ peer=<',peer,'>');
@@ -131,28 +129,14 @@ class DHTBucket {
     const distanceBuf = bitwise.buffer.xor(addressBuf,peerBuf,false);
     //console.log('PeerRoute::calcDistance_ distanceBuf=<',distanceBuf,'>');
     return bigInt(distanceBuf.toString('hex'),16);
-    
-    /*
-    const distanceBit = bitwise.buffer.read(distanceBuf);
-    //console.log('PeerRoute::calcDistance_ distanceBit=<',distanceBit,'>');
-    
-    let distanceXor = 0;
-    for(const bit of distanceBit) {
-      if(bit) {
-        distanceXor++;
-      }
-    }
-    //console.log('PeerRoute::calcDistance_ distanceXor=<',distanceXor,'>');
-    return distanceXor;
-    */
   }
   calcDistanceBit_(address,peer) {
     const addressBuf = base32.decode(address);
     const peerBuf = base32.decode(peer);
     const distanceBuf = bitwise.buffer.xor(addressBuf,peerBuf,false);
-    //console.log('PeerRoute::calcDistance_ distanceBuf=<',distanceBuf,'>');   
+    //console.log('PeerRoute::calcDistanceBit_ distanceBuf=<',distanceBuf,'>');   
     const distanceBit = bitwise.buffer.read(distanceBuf);
-    //console.log('PeerRoute::calcDistance_ distanceBit=<',distanceBit,'>'); 
+    //console.log('PeerRoute::calcDistanceBit_ distanceBit=<',distanceBit,'>'); 
     let firstBit = -1;
     for(const bit of distanceBit) {
       firstBit++;
@@ -160,8 +144,8 @@ class DHTBucket {
         break;
       }
     }
-    //console.log('PeerRoute::calcDistance_ firstBit=<',firstBit,'>');
+    //console.log('PeerRoute::calcDistanceBit_ firstBit=<',firstBit,'>');
     return firstBit;
-  }  
+  }
 };
 module.exports = DHTBucket;

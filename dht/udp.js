@@ -22,62 +22,25 @@ class DHTUdp {
   }
   
   bindSocket(portc,portd) {
-    const self = this;
-    const udpServerCtrl = dgram.createSocket('udp6');
-    udpServerCtrl.on('listening', () => {
-      //console.log('DHTUdp::bindSocket: listening udpServerCtrl =<',udpServerCtrl,'>');
-    });
-    udpServerCtrl.on('message', (message, remote) =>{
-      //console.log('DHTUdp::bindSocket: message message =<',message.toString(),'>');
-      //console.log('DHTUdp::bindSocket: message remote =<',remote,'>');
-      try {
-        const jMsg = JSON.parse(message.toString());
-        //console.log('DHTUdp::bindSocket: message jMsg =<',jMsg,'>');
-        const result = this.node_.verify(jMsg);
-        //console.log('DHTUdp::bindSocket: message result =<',result,'>');
-        if(result) {
-          const node = this.node_.calcID(jMsg);
-          //console.log('DHTUdp::bindSocket: message node =<',node,'>');
-          self.onCtrlMsg_(jMsg.p,remote,node);
-        }
-      } catch(err) {
-        console.log('DHTUdp::bindSocket: message err =<',err,'>');
-      }
-    });
-    udpServerCtrl.bind(portc);
-    this.portc_ = portc;
-
-    const udpServerData = dgram.createSocket('udp6');
-    udpServerData.on('listening', () => {
-      //console.log('DHTUdp::bindSocket: listening udpServerData =<',udpServerData,'>');
-    });
-    udpServerData.on('message', (message, remote) =>{
-      //console.log('DHTUdp::bindSocket: message message =<',message.toString(),'>');
-      //console.log('DHTUdp::bindSocket: message remote =<',remote,'>');
-      try {
-        const jMsg = JSON.parse(message.toString());
-        console.log('DHTUdp::bindSocket: message jMsg =<',jMsg,'>');
-        const result = this.node_.verify(jMsg);
-        console.log('DHTUdp::bindSocket: message result =<',result,'>');
-        if(result) {
-          const node = this.node_.calcID(jMsg);
-          //console.log('DHTUdp::bindSocket: message node =<',node,'>');
-          self.onDataMsg_(jMsg.p,remote,node);
-        }
-      } catch(err) {
-        console.log('DHTUdp::bindSocket: message err =<',err,'>');
-      }
-    });
-    udpServerData.bind(portd);
-    this.portd_ = portd;
+    this.bindCtrlSocket_(portc);
+    this.bindDataSocket_(portd);
   }
-  send(cmd,port,host) {
-    const signedCmd = this.node_.sign(cmd);
+  sendCtrl(cmd,port,host) {
+    const signedCmd = this.node_.signCtrl(cmd);
     const cmdMsg = Buffer.from(JSON.stringify(signedCmd));
     try {
       this.client_.send(cmdMsg, 0, cmdMsg.length, port,host);
     } catch(err) {
-      console.log('DHTUdp::send:err=<',err,'>');
+      console.log('DHTUdp::sendCtrl:err=<',err,'>');
+    }
+  }
+  sendData(cmd,port,host) {
+    const signedCmd = this.node_.signData(cmd);
+    const cmdMsg = Buffer.from(JSON.stringify(signedCmd));
+    try {
+      this.client_.send(cmdMsg, 0, cmdMsg.length, port,host);
+    } catch(err) {
+      console.log('DHTUdp::sendData:err=<',err,'>');
     }
   }
   
@@ -109,7 +72,7 @@ class DHTUdp {
     for(const outEPIndex in outEPs) {
       const outEP = outEPs[outEPIndex];
       //console.log('DHTUdp::spread: outEP =<',outEP,'>');
-      this.send(msgDHT,outEP.portd,outEP.address);
+      this.sendData(msgDHT,outEP.portd,outEP.address);
     }
   }
   onSpread2Me(msgDHT) {
@@ -146,7 +109,7 @@ class DHTUdp {
     for(const outEPIndex in outEPs) {
       const outEP = outEPs[outEPIndex];
       //console.log('DHTUdp::deliver: outEP =<',outEP,'>');
-      this.send(msgDHT,outEP.portd,outEP.address);
+      this.sendData(msgDHT,outEP.portd,outEP.address);
     }
   }
   onDeliver2Me(msgDHT) {
@@ -168,7 +131,7 @@ class DHTUdp {
           at:new Date(),
         }
       }
-      this.send(entryMesh,entrance.portc,entrance.host);
+      this.sendCtrl(entryMesh,entrance.portc,entrance.host);
     }
   }
   onCtrlMsg_(msg,remote,nodeFrom) {
@@ -211,7 +174,7 @@ class DHTUdp {
         at:new Date().toISOString()
       }
     };
-    this.send(welcome,portc,address);
+    this.sendCtrl(welcome,portc,address);
     //console.log('DHTUdp::onDHTEntry:this.worldNodes_=<',this.worldNodes_,'>');
   }
   onDHTWelcome(welcome,remote,nodeFrom) {
@@ -239,7 +202,7 @@ class DHTUdp {
           r:new Date()
         }
       };
-      this.send(pong,node.portc,node.address);
+      this.sendCtrl(pong,node.portc,node.address);
     }
   }
 
@@ -298,13 +261,66 @@ class DHTUdp {
             s:new Date()
           }
         };
-        this.send(pingDHT,node.portc,node.address);
+        this.sendCtrl(pingDHT,node.portc,node.address);
       }
     }
   }
 
 
 
+  bindCtrlSocket_(portc) {
+    const self = this;
+    const udpServerCtrl = dgram.createSocket('udp6');
+    udpServerCtrl.on('listening', () => {
+      //console.log('DHTUdp::bindCtrlSocket_: listening udpServerCtrl =<',udpServerCtrl,'>');
+    });
+    udpServerCtrl.on('message', (message, remote) =>{
+      //console.log('DHTUdp::bindCtrlSocket_: message message =<',message.toString(),'>');
+      //console.log('DHTUdp::bindCtrlSocket_: message remote =<',remote,'>');
+      try {
+        const jMsg = JSON.parse(message.toString());
+        //console.log('DHTUdp::bindCtrlSocket_: message jMsg =<',jMsg,'>');
+        const result = this.node_.verifyCtrl(jMsg);
+        //console.log('DHTUdp::bindCtrlSocket_: message result =<',result,'>');
+        if(result) {
+          const node = this.node_.calcID(jMsg);
+          //console.log('DHTUdp::bindCtrlSocket_: message node =<',node,'>');
+          self.onCtrlMsg_(jMsg.p,remote,node);
+        }
+      } catch(err) {
+        console.log('DHTUdp::bindCtrlSocket_: message err =<',err,'>');
+      }
+    });
+    udpServerCtrl.bind(portc);
+    this.portc_ = portc;
+  }
+
+  bindDataSocket_(portd) {
+    const self = this;
+    const udpServerData = dgram.createSocket('udp6');
+    udpServerData.on('listening', () => {
+      //console.log('DHTUdp::bindDataSocket_: listening udpServerData =<',udpServerData,'>');
+    });
+    udpServerData.on('message', (message, remote) =>{
+      //console.log('DHTUdp::bindDataSocket_: message message =<',message.toString(),'>');
+      //console.log('DHTUdp::bindDataSocket_: message remote =<',remote,'>');
+      try {
+        const jMsg = JSON.parse(message.toString());
+        console.log('DHTUdp::bindDataSocket_: message jMsg =<',jMsg,'>');
+        const result = this.node_.verifyData(jMsg);
+        console.log('DHTUdp::bindDataSocket_: message result =<',result,'>');
+        if(result) {
+          const node = this.node_.calcID(jMsg);
+          //console.log('DHTUdp::bindDataSocket_: message node =<',node,'>');
+          self.onDataMsg_(jMsg.p,remote,node);
+        }
+      } catch(err) {
+        console.log('DHTUdp::bindDataSocket_: message err =<',err,'>');
+      }
+    });
+    udpServerData.bind(portd);
+    this.portd_ = portd;
+  }
 
 
   onDataMsg_(msg,remote,node) {

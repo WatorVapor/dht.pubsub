@@ -1,6 +1,13 @@
 'use strict';
 const DHTClient = require('../client.js');
-const client = new DHTClient();
+const onDHTSpread = (spread)=> {
+  console.log('test::onDHTSpread:spread=<',spread,'>');
+}
+const onDHTDeliver = (deliver)=> {
+  console.log('test::onDHTDeliver:deliver=<',deliver,'>');
+}
+
+const client = new DHTClient(onDHTSpread,onDHTDeliver);
 const deliverPayload = {
   channel:'aaa',
   msg:'hello world'

@@ -27,7 +27,7 @@ class DHTNode {
     //console.log('DHTNode::constructor this.id=<',this.id,'>');
     //console.log('DHTNode::constructor this.address=<',this.address,'>');
   }
-  sign(msg) {
+  signCtrl(msg) {
     let now = new Date();
     const signedMsg = {};
     signedMsg.p = msg;
@@ -38,35 +38,85 @@ class DHTNode {
     
     let msgStr = JSON.stringify(signedMsg);
     let msgHash = CryptoJS.RIPEMD160(msgStr).toString(CryptoJS.enc.Base64);
-    //console.log('DHTNode::sign msgHash=<',msgHash,'>');
-    //console.log('DHTNode::sign this.secretKey=<',this.secretKey,'>');
+    //console.log('DHTNode::signCtrl msgHash=<',msgHash,'>');
+    //console.log('DHTNode::signCtrl this.secretKey=<',this.secretKey,'>');
     const signBuff = nacl.sign(nacl.util.decodeBase64(msgHash),this.secretKey);
-    //console.log('DHTNode::sign signBuff=<',signBuff,'>');
+    //console.log('DHTNode::signCtrl signBuff=<',signBuff,'>');
     signedMsg.v = nacl.util.encodeBase64(signBuff);
     return signedMsg;
   }
 
-  verify(msgJson) {
+  verifyCtrl(msgJson) {
     const now = new Date();
     const msgTs = new Date(msgJson.s.t);
     const escape_time = now -msgTs;
-    //console.log('DHTNode::verify escape_time=<',escape_time,'>');
+    //console.log('DHTNode::verifyCtrl escape_time=<',escape_time,'>');
     if(escape_time > iConstMessageOutDateInMs) {
       return false;
     }    
     const hashMsg = Object.assign({}, msgJson);
     delete hashMsg.v;
     let msgStr = JSON.stringify(hashMsg);
-    //console.log('DHTNode::verify msgStr=<',msgStr,'>');
+    //console.log('DHTNode::verifyCtrl msgStr=<',msgStr,'>');
     let msgHash = CryptoJS.RIPEMD160(msgStr).toString(CryptoJS.enc.Base64);
-    //console.log('DHTNode::verify msgHash=<',msgHash,'>');
-    //console.log('DHTNode::verify msgJson=<',msgJson,'>');
+    //console.log('DHTNode::verifyCtrl msgHash=<',msgHash,'>');
+    //console.log('DHTNode::verifyCtrl msgJson=<',msgJson,'>');
     const pubKey = nacl.util.decodeBase64(msgJson.s.k);
-    //console.log('DHTNode::verify pubKey=<',pubKey,'>');
+    //console.log('DHTNode::verifyCtrl pubKey=<',pubKey,'>');
     const signedVal = nacl.util.decodeBase64(msgJson.v);
-    //console.log('DHTNode::verify signedVal=<',signedVal,'>');
+    //console.log('DHTNode::verifyCtrl signedVal=<',signedVal,'>');
     const openedMsg = nacl.sign.open(signedVal,pubKey);
-    //console.log('DHTNode::verify openedMsg=<',openedMsg,'>');
+    //console.log('DHTNode::verifyCtrl openedMsg=<',openedMsg,'>');
+    if(openedMsg) {
+      const openedMsgB64 = nacl.util.encodeBase64(openedMsg);
+      //console.log('DHTNode::verifyCtrl openedMsgB64=<',openedMsgB64,'>');
+      if(openedMsgB64 === msgHash) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  signData(msg) {
+    let now = new Date();
+    const signedMsg = {};
+    signedMsg.p = msg;
+    signedMsg.t = this.config_.trap;
+    signedMsg.s = {};
+    signedMsg.s.t = now.toISOString();
+    signedMsg.s.k = this.keyMaster.publicKey;
+    
+    let msgStr = JSON.stringify(signedMsg);
+    let msgHash = CryptoJS.RIPEMD160(msgStr).toString(CryptoJS.enc.Base64);
+    //console.log('DHTNode::signData msgHash=<',msgHash,'>');
+    //console.log('DHTNode::signData this.secretKey=<',this.secretKey,'>');
+    const signBuff = nacl.sign(nacl.util.decodeBase64(msgHash),this.secretKey);
+    //console.log('DHTNode::signData signBuff=<',signBuff,'>');
+    signedMsg.v = nacl.util.encodeBase64(signBuff);
+    return signedMsg;
+  }
+
+  verifyData(msgJson) {
+    const now = new Date();
+    const msgTs = new Date(msgJson.s.t);
+    const escape_time = now -msgTs;
+    //console.log('DHTNode::verifyData escape_time=<',escape_time,'>');
+    if(escape_time > iConstMessageOutDateInMs) {
+      return false;
+    }    
+    const hashMsg = Object.assign({}, msgJson);
+    delete hashMsg.v;
+    let msgStr = JSON.stringify(hashMsg);
+    //console.log('DHTNode::verifyData msgStr=<',msgStr,'>');
+    let msgHash = CryptoJS.RIPEMD160(msgStr).toString(CryptoJS.enc.Base64);
+    //console.log('DHTNode::verifyData msgHash=<',msgHash,'>');
+    //console.log('DHTNode::verifyData msgJson=<',msgJson,'>');
+    const pubKey = nacl.util.decodeBase64(msgJson.s.k);
+    //console.log('DHTNode::verifyData pubKey=<',pubKey,'>');
+    const signedVal = nacl.util.decodeBase64(msgJson.v);
+    //console.log('DHTNode::verifyData signedVal=<',signedVal,'>');
+    const openedMsg = nacl.sign.open(signedVal,pubKey);
+    //console.log('DHTNode::verifyData openedMsg=<',openedMsg,'>');
     if(openedMsg) {
       const openedMsgB64 = nacl.util.encodeBase64(openedMsg);
       //console.log('DHTNode::verify openedMsgB64=<',openedMsgB64,'>');
@@ -76,6 +126,8 @@ class DHTNode {
     }
     return false;
   }
+
+
   calcID(msgJson) {
     const keyRipemd = CryptoJS.RIPEMD160(msgJson.s.k).toString(CryptoJS.enc.Hex);
     const keyBuffer = Buffer.from(keyRipemd,'hex');

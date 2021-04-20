@@ -12,9 +12,11 @@ const broker2client_cb = utils.random();
 const broker2client = `/dev/shm/dht.pubsub.broker2client.${broker2client_cb}.sock`;
 
 class DHTClient {
-  constructor() {
+  constructor(dhtSpread,dhtDeliver) {
     if(debug_) {
     }
+    this.onDHTSpread_ = dhtSpread;
+    this.onDHTDeliver_ = dhtDeliver;
     const self = this;
     this.api_ = new ApiUnxiUdp((msg)=>{
       self.onBrokerMsg(msg);
@@ -33,11 +35,11 @@ class DHTClient {
     }
   }
   spread(msg,cid) {
-    console.log('DHTClient::spread: msg =<',msg,'>');
+    //console.log('DHTClient::spread: msg =<',msg,'>');
     this.send_({spread:{m:msg},cid:cid});
   }
   deliver(msg,pid) {
-    console.log('DHTClient::deliver: msg =<',msg,'>');
+    //console.log('DHTClient::deliver: msg =<',msg,'>');
     this.send_({deliver:{m:msg},pid:pid});
   }
 
@@ -48,8 +50,26 @@ class DHTClient {
     } else if(msg.peer) {
       this.onBrokerPeer(msg.peer);
     } else if(msg.ping) {
+    } else if(msg.spread) {
+      this.onBrokerSpread_(msg.spread);
+    } else if(msg.deliver) {
+      this.onBrokerDeliver_(msg.deliver);
     } else {
       console.log('DHTClient::onBrokerMsg:msg=<',msg,'>');
+    }
+  }
+  
+  onBrokerSpread_(spread) {
+    //console.log('DHTClient::onBrokerSpread_:spread=<',spread,'>');
+    console.log('DHTClient::onBrokerSpread_:typeof this.onDHTSpread_=<',typeof this.onDHTSpread_,'>');
+    if(typeof this.onDHTSpread_ === 'function') {
+      this.onDHTSpread_(spread);
+    }
+  }
+  onBrokerDeliver_(deliver) {
+    //console.log('DHTClient::onBrokerDeliver_:deliver=<',deliver,'>');
+    if(typeof this.onDHTDeliver_ === 'function') {
+      this.onDHTDeliver_(deliver);
     }
   }
   

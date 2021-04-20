@@ -48,10 +48,38 @@ class DHTBroker {
   }
   
   onDHTSpread_(dhtMsg) {
-    console.log('DHTBroker::onDHTSpread_:dhtMsg=<',dhtMsg,'>');
+    //console.log('DHTBroker::onDHTSpread_:dhtMsg=<',dhtMsg,'>');
+    //console.log('DHTBroker::onDHTSpread_:this.api_cbs_=<',this.api_cbs_,'>');
+    const apiMsg = {
+      spread:dhtMsg
+    };
+    for(const cbKey in this.api_cbs_) {
+      //console.log('DHTBroker::onDHTSpread_:cbKey=<',cbKey,'>');
+      const cbEntry = this.api_cbs_[cbKey];
+      //console.log('DHTBroker::onDHTSpread_:cbEntry=<',cbEntry,'>');
+      try {
+        this.api_.send(apiMsg,cbEntry.path);
+      } catch(err) {
+        console.log('DHTBroker::onDHTSpread_:err=<',err,'>');
+      }
+    }
   }
   onDHTDeliver_(dhtMsg) {
-    console.log('DHTBroker::onDHTDeliver_:dhtMsg=<',dhtMsg,'>');
+    //console.log('DHTBroker::onDHTDeliver_:dhtMsg=<',dhtMsg,'>');
+    //console.log('DHTBroker::onDHTDeliver_:this.api_cbs_=<',this.api_cbs_,'>');
+    const apiMsg = {
+      deliver:dhtMsg
+    };
+    for(const cbKey in this.api_cbs_) {
+      //console.log('DHTBroker::onDHTDeliver_:cbKey=<',cbKey,'>');
+      const cbEntry = this.api_cbs_[cbKey];
+      //console.log('DHTBroker::onDHTDeliver_:cbEntry=<',cbEntry,'>');
+      try {
+        this.api_.send(apiMsg,cbEntry.path);
+      } catch(err) {
+        console.log('DHTBroker::onDHTDeliver_:err=<',err,'>');
+      }
+    }
   }
   
   findRelayGates_(relayMsg) {
@@ -125,20 +153,20 @@ class DHTBroker {
     }
   }
   onApiSpread(spread,cid,cb) {
-    console.log('DHTBroker::onApiSpread:spread=<',spread,'>');
-    console.log('DHTBroker::onApiSpread:cid=<',cid,'>');
-    console.log('DHTBroker::onApiSpread:cb=<',cb,'>');
+    //console.log('DHTBroker::onApiSpread:spread=<',spread,'>');
+    //console.log('DHTBroker::onApiSpread:cid=<',cid,'>');
+    //console.log('DHTBroker::onApiSpread:cb=<',cb,'>');
     const outgates = this.bucket_.near(cid);
-    console.log('DHTBroker::onApiSpread:outgates=<',outgates,'>');
+    //console.log('DHTBroker::onApiSpread:outgates=<',outgates,'>');
     this.dht_udp_.spread(outgates,spread,cid,cb);
 
   }
   onApiDeliver(deliver,pid,cb) {
-    console.log('DHTBroker::onApiDeliver:deliver=<',deliver,'>');
-    console.log('DHTBroker::onApiDeliver:pid=<',pid,'>');
-    console.log('DHTBroker::onApiDeliver:cb=<',cb,'>');
+    //console.log('DHTBroker::onApiDeliver:deliver=<',deliver,'>');
+    //console.log('DHTBroker::onApiDeliver:pid=<',pid,'>');
+    //console.log('DHTBroker::onApiDeliver:cb=<',cb,'>');
     const outgates = this.bucket_.near(pid);
-    console.log('DHTBroker::onApiDeliver:outgates=<',outgates,'>');
+    //console.log('DHTBroker::onApiDeliver:outgates=<',outgates,'>');
     this.dht_udp_.deliver(outgates,deliver,pid,cb);
   }
  
