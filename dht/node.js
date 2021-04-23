@@ -81,10 +81,15 @@ class DHTNode {
     let now = new Date();
     const signedMsg = {};
     signedMsg.p = msg;
-    signedMsg.t = this.config_.trap;
+    /*
+    signedMsg.f[this.id] = {};
+    signedMsg.f[this.id].t = now.toISOString();
+    signedMsg.f[this.id].k = this.keyMaster.publicKey;
+    */
     signedMsg.s = {};
     signedMsg.s.t = now.toISOString();
     signedMsg.s.k = this.keyMaster.publicKey;
+    
     
     let msgStr = JSON.stringify(signedMsg);
     let msgHash = CryptoJS.RIPEMD160(msgStr).toString(CryptoJS.enc.Base64);
@@ -93,6 +98,7 @@ class DHTNode {
     const signBuff = nacl.sign(nacl.util.decodeBase64(msgHash),this.secretKey);
     //console.log('DHTNode::signData signBuff=<',signBuff,'>');
     signedMsg.v = nacl.util.encodeBase64(signBuff);
+    signedMsg.f = {};
     return signedMsg;
   }
 

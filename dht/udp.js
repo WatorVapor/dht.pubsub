@@ -49,11 +49,8 @@ class DHTUdp {
     //console.log('DHTUdp::spread: outgates =<',outgates,'>');
     const msgDHT = {
       cid:cid,
-      spread:spread,
-      cb:cb,
-      footprint:[
-        this.node_.id
-      ]
+      spread:JSON.stringify(spread),
+      cb:cb
     }
     const outEPs = {};
     let isDone = false;
@@ -86,11 +83,8 @@ class DHTUdp {
     //console.log('DHTUdp::deliver: outgates =<',outgates,'>');
     const msgDHT = {
       pid:pid,
-      deliver:deliver,
-      cb:cb,
-      footprint:[
-        this.node_.id
-      ]
+      deliver:JSON.stringify(deliver),
+      cb:cb
     }
     const outEPs = {};
     let isDone = false;
