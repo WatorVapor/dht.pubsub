@@ -26,30 +26,58 @@ class DHTBroker {
     this.localChannels_ = {};
     this.node_ = new DHTNode(conf);
     this.bucket_ = new DHTBucket(this.node_);
-    this.dht_udp_ = new DHTUdp(conf,this.node_,this.bucket_,(msg,remote,node)=>{
-      self.onDHTDataMsg(msg,remote,node);
+    this.dht_udp_ = new DHTUdp(conf,this.node_,this.bucket_,(msg,node)=>{
+      self.onDHTDataMsg(msg,node);
     });
     this.dht_udp_.bindSocket(conf.portc,conf.portd);
   }
 
-  onDHTDataMsg(msg,remote,nodeFrom) {
-    //console.log('DHTBroker::onDHTDataMsg:msg=<',msg,'>');
-    //console.log('DHTBroker::onDHTDataMsg:remote=<',remote,'>');
-    //console.log('DHTBroker::onDHTDataMsg:nodeFrom=<',nodeFrom,'>');
-    if(msg.spread) {
-      this.onDHTSpread_(msg.spread);
-    } else if(msg.deliver) {
-      this.onDHTDeliver_(msg.deliver);
+  onDHTDataMsg(msg,nodeFrom) {
+    console.log('DHTBroker::onDHTDataMsg:msg=<',msg,'>');
+    console.log('DHTBroker::onDHTDataMsg:nodeFrom=<',nodeFrom,'>');
+    /*
+      local dht msg
+    */
+    if(nodeFrom === this.node_.id) {
+      if(msg.spread) {
+        this.onDHTSpread_(msg.spread);
+      } else if(msg.deliver) {
+        this.onDHTDeliver_(msg.deliver);
+      } else {
+        console.log('DHTBroker::onDataMsg_:msg=<',msg,'>');
+        console.log('DHTBroker::onDataMsg_:nodeFrom=<',nodeFrom,'>');
+      }
+      return;
+    }
+    /*
+      remote dht msg
+    */
+    if(msg.p && msg.p.pid && msg.p.pid !== this.node_.id) {
+      this.relayDHTDataMsg_(msg,nodeFrom);
+      return;
+    }
+    if(msg.p && msg.p.cid) {
+      const outgates = this.bucket_.near(msg.p.cid);
+      console.log('DHTBroker::onDHTDataMsg:outgates=<',outgates,'>');
+      console.log('DHTBroker::onDHTDataMsg:this.node_.id=<',this.node_.id,'>');
+      if(!outgates.includes(this.node_.id)) {
+        this.relayDHTDataMsg_(msg,nodeFrom);
+        return;        
+      }
+    }
+    if(msg.p.spread) {
+      this.onDHTSpread_(msg.p.spread);
+    } else if(msg.p.deliver) {
+      this.onDHTDeliver_(msg.p.deliver);
     } else {
       console.log('DHTBroker::onDataMsg_:msg=<',msg,'>');
-      console.log('DHTBroker::onDataMsg_:remote=<',remote,'>');
       console.log('DHTBroker::onDataMsg_:nodeFrom=<',nodeFrom,'>');
     }
   }
   
   onDHTSpread_(dhtMsg) {
-    //console.log('DHTBroker::onDHTSpread_:dhtMsg=<',dhtMsg,'>');
-    //console.log('DHTBroker::onDHTSpread_:this.api_cbs_=<',this.api_cbs_,'>');
+    console.log('DHTBroker::onDHTSpread_:dhtMsg=<',dhtMsg,'>');
+    console.log('DHTBroker::onDHTSpread_:this.api_cbs_=<',this.api_cbs_,'>');
     const apiMsg = {
       spread:dhtMsg
     };
@@ -65,8 +93,8 @@ class DHTBroker {
     }
   }
   onDHTDeliver_(dhtMsg) {
-    //console.log('DHTBroker::onDHTDeliver_:dhtMsg=<',dhtMsg,'>');
-    //console.log('DHTBroker::onDHTDeliver_:this.api_cbs_=<',this.api_cbs_,'>');
+    console.log('DHTBroker::onDHTDeliver_:dhtMsg=<',dhtMsg,'>');
+    console.log('DHTBroker::onDHTDeliver_:this.api_cbs_=<',this.api_cbs_,'>');
     const apiMsg = {
       deliver:dhtMsg
     };
@@ -96,6 +124,15 @@ class DHTBroker {
     }
     //console.log('DHTBroker::findRelayGates_:relayGates=<',relayGates,'>');
     return relayGates;
+  }
+  
+  relayDHTDataMsg_(relayMsg,nodeFrom) {
+    console.log('DHTBroker::relayDHTDataMsg_:relayMsg=<',relayMsg,'>');
+    console.log('DHTBroker::relayDHTDataMsg_:nodeFrom=<',nodeFrom,'>');
+    const address = relayMsg.p.pid || relayMsg.p.cid;
+    console.log('DHTBroker::relayDHTDataMsg_:address=<',address,'>');
+    const outgates = this.bucket_.near(address);
+    console.log('DHTBroker::relayDHTDataMsg_:outgates=<',outgates,'>');
   }
 
 

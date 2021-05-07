@@ -81,16 +81,10 @@ class DHTNode {
     let now = new Date();
     const signedMsg = {};
     signedMsg.p = msg;
-    /*
-    signedMsg.f[this.id] = {};
-    signedMsg.f[this.id].t = now.toISOString();
-    signedMsg.f[this.id].k = this.keyMaster.publicKey;
-    */
+    signedMsg.f = [];    
     signedMsg.s = {};
     signedMsg.s.t = now.toISOString();
     signedMsg.s.k = this.keyMaster.publicKey;
-    
-    
     let msgStr = JSON.stringify(signedMsg);
     let msgHash = CryptoJS.RIPEMD160(msgStr).toString(CryptoJS.enc.Base64);
     //console.log('DHTNode::signData msgHash=<',msgHash,'>');
@@ -98,7 +92,6 @@ class DHTNode {
     const signBuff = nacl.sign(nacl.util.decodeBase64(msgHash),this.secretKey);
     //console.log('DHTNode::signData signBuff=<',signBuff,'>');
     signedMsg.v = nacl.util.encodeBase64(signBuff);
-    signedMsg.f = {};
     return signedMsg;
   }
 
@@ -110,8 +103,11 @@ class DHTNode {
     if(escape_time > iConstMessageOutDateInMs) {
       return false;
     }    
+    //console.log('DHTNode::verifyData msgJson=<',msgJson,'>');
     const hashMsg = Object.assign({}, msgJson);
     delete hashMsg.v;
+    //console.log('DHTNode::verifyData msgJson=<',msgJson,'>');
+    //console.log('DHTNode::verifyData hashMsg=<',hashMsg,'>');
     let msgStr = JSON.stringify(hashMsg);
     //console.log('DHTNode::verifyData msgStr=<',msgStr,'>');
     let msgHash = CryptoJS.RIPEMD160(msgStr).toString(CryptoJS.enc.Base64);
@@ -125,7 +121,7 @@ class DHTNode {
     //console.log('DHTNode::verifyData openedMsg=<',openedMsg,'>');
     if(openedMsg) {
       const openedMsgB64 = nacl.util.encodeBase64(openedMsg);
-      //console.log('DHTNode::verify openedMsgB64=<',openedMsgB64,'>');
+      //console.log('DHTNode::verifyData openedMsgB64=<',openedMsgB64,'>');
       if(openedMsgB64 === msgHash) {
         return true;
       }

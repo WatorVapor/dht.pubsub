@@ -75,7 +75,7 @@ class DHTUdp {
   onSpread2Me(msgDHT) {
     console.log('DHTUdp::onSpread2Me: msgDHT =<',msgDHT,'>');
     if(typeof this.onMsg_ === 'function') {
-      this.onMsg_(msgDHT);
+      this.onMsg_(msgDHT,this.node_.id);
     }
   }
 
@@ -109,7 +109,7 @@ class DHTUdp {
   onDeliver2Me(msgDHT) {
     console.log('DHTUdp::onDeliver2Me: msgDHT =<',msgDHT,'>');
     if(typeof this.onMsg_ === 'function') {
-      this.onMsg_(msgDHT);
+      this.onMsg_(msgDHT,this.node_.id);
     }
   }
  
@@ -300,13 +300,13 @@ class DHTUdp {
       //console.log('DHTUdp::bindDataSocket_: message remote =<',remote,'>');
       try {
         const jMsg = JSON.parse(message.toString());
-        console.log('DHTUdp::bindDataSocket_: message jMsg =<',jMsg,'>');
+        //console.log('DHTUdp::bindDataSocket_: message jMsg =<',jMsg,'>');
         const result = this.node_.verifyData(jMsg);
-        console.log('DHTUdp::bindDataSocket_: message result =<',result,'>');
+        //console.log('DHTUdp::bindDataSocket_: message result =<',result,'>');
         if(result) {
           const node = this.node_.calcID(jMsg);
           //console.log('DHTUdp::bindDataSocket_: message node =<',node,'>');
-          self.onDataMsg_(jMsg.p,remote,node);
+          self.onDataMsg_(jMsg,node);
         }
       } catch(err) {
         console.log('DHTUdp::bindDataSocket_: message err =<',err,'>');
@@ -317,12 +317,11 @@ class DHTUdp {
   }
 
 
-  onDataMsg_(msg,remote,node) {
+  onDataMsg_(msg,node) {
     //console.log('DHTUdp::onDataMsg_:msg=<',msg,'>');
-    //console.log('DHTUdp::onDataMsg_:remote=<',remote,'>');
     //console.log('DHTUdp::onDataMsg_:node=<',node,'>');
     if(typeof this.onMsg_ === 'function') {
-      this.onMsg_(msg,remote,node);
+      this.onMsg_(msg,node);
     }
   }
 };
