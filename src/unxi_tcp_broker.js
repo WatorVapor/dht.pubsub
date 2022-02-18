@@ -1,5 +1,6 @@
 'use strict';
 const net = require('net');
+const crypto = require('crypto');
 const fs = require('fs');
 const execSync = require('child_process').execSync;
 const debug_ = true;
@@ -7,12 +8,19 @@ const SOCK_PATH = '/tmp/dht.pubsub.sock';
 class UnxiTCPBroker {
   constructor() {
     this.tcpReadBuffer_ = '';
+    this.subscribers_ = {};
+    this.connections_ = {};
     const resultRM = execSync(`rm -rf ${SOCK_PATH}`);
     if(debug_) {
       console.log('UnxiTCPBroker::constructor: resultRM =<',resultRM.toString(),'>');
     }
     const self = this;
     this.server_ = net.createServer((connection) => {
+      const shasum = crypto.createHash('sha1');
+      shasum.update(crypto.randomBytes(256).toString('base64'));
+      const connectID = shasum.digest('base64');
+      connection.id = connectID;
+      this.connections_[connectID] = connection;
       connection.on('data', (data) => {
         self.onTCPData_(data.toString(),connection);
       });
@@ -60,9 +68,24 @@ class UnxiTCPBroker {
   }
   onSubscribeData_(jMsg,connection) {
     console.log('UnxiTCPBroker::onSubscribeData_: jMsg =<',jMsg,'>');
+    const ch = jMsg.c;
+    if(ch) {
+      if(!this.subscribers_[ch]) {
+        this.subscribers_[ch] = [];
+      }
+      this.subscribers_[ch].push(connection.id);
+    }
+    console.log('UnxiTCPBroker::onSubscribeData_: this.subscribers_ =<',this.subscribers_,'>');
   }
   onUnsubscribeData_(jMsg,connection) {
     console.log('UnxiTCPBroker::onUnsubscribeData_: jMsg =<',jMsg,'>');
+    const ch = jMsg.c;
+    if(ch) {
+      if(this.subscribers_[ch]) {
+        this.subscribers_[ch] = this.subscribers_[ch].filter((f)=>{return f !== connection.id});
+      }
+    }
+    console.log('UnxiTCPBroker::onSubscribeData_: this.subscribers_ =<',this.subscribers_,'>');
   }
 };
 module.exports = UnxiTCPBroker;
