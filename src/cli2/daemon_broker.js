@@ -1,5 +1,5 @@
 'use strict';
-const Broker = require('../unix_tcp_broker.js');
+const UnxiTCPBroker = require('../unix_tcp_broker.js');
 const dht_port = 1234;
 const dht_port_data = dht_port + 1;
 const dht_config = {
@@ -22,4 +22,4 @@ const dht_config = {
   portd:dht_port_data,
   trap:true
 };
-const broker = new Broker(dht_config);
+const broker = new UnxiTCPBroker(dht_config);

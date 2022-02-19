@@ -29,14 +29,14 @@ class Subscriber {
   }
   subscribe(channel) {
     console.log('Subscriber::subscribe: channel =<',channel,'>');
-    const apiPack = {r:'subscribe',c:channel};
+    const apiPack = {rq:'subscribe',ch:channel};
     const writePack = JSON.stringify(apiPack);
     const writeB64 = Buffer.from(writePack).toString('base64');
     this.client_.write(writeB64 + '\r\n');
   }
   unsubscribe(channel) {
     console.log('Subscriber::unsubscribe: channel =<',channel,'>');
-    const apiPack = {r:'unsubscribe',c:channel};
+    const apiPack = {rq:'unsubscribe',ch:channel};
     const writePack = JSON.stringify(apiPack);
     const writeB64 = Buffer.from(writePack).toString('base64');
     this.client_.write(writeB64 + '\r\n');

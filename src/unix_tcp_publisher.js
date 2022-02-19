@@ -30,7 +30,7 @@ class Publisher {
   publish(channel,msg) {
     console.log('Publisher::publish: channel =<',channel,'>');
     console.log('Publisher::publish: msg =<',msg,'>');
-    const apiPack = {r:'publish',c:channel,p:msg};
+    const apiPack = {rq:'publish',ch:channel,py:msg};
     const writePack = JSON.stringify(apiPack);
     const writeB64 = Buffer.from(writePack).toString('base64');
     this.client_.write(writeB64 + '\r\n');

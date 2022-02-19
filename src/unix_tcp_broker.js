@@ -1,94 +1,174 @@
 'use strict';
-const net = require('net');
-const crypto = require('crypto');
-const fs = require('fs');
-const execSync = require('child_process').execSync;
 const debug_ = true;
-const SOCK_PATH = '/tmp/dht.pubsub.sock';
+const execSync = require('child_process').execSync;
+const UnxiTCPService = require('./unix_tcp_service.js');
+const DHTUdp = require('./dht.udp.js');
+const DHTNode = require('./dht.node.js');
+const DHTBucket = require('./dht.bucket.js');
+const DHTUtils = require('./dht.utils.js');
+const DHTStorage = require('./dht.leveldb.js');
+const utils = new DHTUtils();
+
+
 class UnxiTCPBroker {
-  constructor(config) {
-    this.tcpReadBuffer_ = '';
-    this.subscribers_ = {};
-    this.connections_ = {};
-    const resultRM = execSync(`rm -rf ${SOCK_PATH}`);
+  constructor(conf) {
     if(debug_) {
-      console.log('UnxiTCPBroker::constructor: resultRM =<',resultRM.toString(),'>');
+      console.log('UnxiTCPBroker::constructor:conf=<',conf,'>');
     }
     const self = this;
-    this.server_ = net.createServer((connection) => {
-      const shasum = crypto.createHash('sha1');
-      shasum.update(crypto.randomBytes(256).toString('base64'));
-      const connectID = shasum.digest('base64');
-      connection.id = connectID;
-      this.connections_[connectID] = connection;
-      connection.on('data', (data) => {
-        self.onTCPData_(data.toString(),connection);
-      });
+    this.api_ = new UnxiTCPService((msg)=>{
+      self.onClientMsg_(msg);
     });
-    this.server_.listen(SOCK_PATH);
+    this.node_ = new DHTNode(conf);
+    this.bucket_ = new DHTBucket(this.node_);
+    this.dht_udp_ = new DHTUdp(conf,this.node_,this.bucket_,(msg,remote,node)=>{
+      self.onDHTDataMsg(msg,remote,node);
+    });
+    this.dht_udp_.bindSocket(conf.portc,conf.portd);
+    this.storage_ = new DHTStorage(conf); 
   }
-  onTCPData_(data,connection) {
-    //console.log('UnxiTCPBroker::onTCPData_: data =<',data,'>');
-    if(this.tcpReadBuffer_) {
-      data = this.tcpReadBuffer_ + data;
-    }
-    const dataOflines = data.split('\r\n');
-    //console.log('UnxiTCPBroker::onTCPData_: dataOflines =<',dataOflines,'>');
-    this.tcpReadBuffer_ = dataOflines[dataOflines.length - 1];
-    for(let index = 0;index < dataOflines.length - 1 ;index++) {
-      this.onSegmentData_(dataOflines[index],connection);
+
+  onDHTDataMsg(msg,remote,nodeFrom) {
+    console.log('UnxiTCPBroker::onDHTDataMsg:msg=<',msg,'>');
+    console.log('UnxiTCPBroker::onDHTDataMsg:remote=<',remote,'>');
+    console.log('UnxiTCPBroker::onDHTDataMsg:nodeFrom=<',nodeFrom,'>');
+    if(msg.subscribe) {
+      this.onDHTSubscribe_(msg.subscribe,remote,nodeFrom);
+    } else if(msg.publish) {
+      this.onDHTPublish_(msg.publish,remote,nodeFrom);
+    } else {
+      console.log('UnxiTCPBroker::onDataMsg_:msg=<',msg,'>');
+      console.log('UnxiTCPBroker::onDataMsg_:remote=<',remote,'>');
+      console.log('UnxiTCPBroker::onDataMsg_:nodeFrom=<',nodeFrom,'>');
     }
   }
-  onSegmentData_(data,connection) {
-    //console.log('UnxiTCPBroker::onSegmentData_: data =<',data,'>');
-    const dataText = Buffer.from(data,'base64').toString('utf-8');
-    //console.log('UnxiTCPBroker::onSegmentData_: dataText =<',dataText,'>');
-    try {
-      const jMsg = JSON.parse(dataText);
-      if(jMsg.r) {
-        if(jMsg.r === 'publish') {
-          this.onPublishData_(jMsg,connection);
-        } else if(jMsg.r === 'subscribe') {
-          this.onSubscribeData_(jMsg,connection);
-        } else if(jMsg.r === 'unsubscribe') {
-          this.onUnsubscribeData_(jMsg,connection);
-        } else {
-          console.log('UnxiTCPBroker::onSegmentData_: jMsg =<',jMsg,'>');
+  onDHTSubscribe_(subscribe,remote,from) {
+    console.log('UnxiTCPBroker::onDHTSubscribe_:subscribe=<',subscribe,'>');
+    console.log('UnxiTCPBroker::onDHTSubscribe_:remote=<',remote,'>');
+    console.log('UnxiTCPBroker::onDHTSubscribe_:from=<',from,'>');
+    const relayGates = this.findRelayGates_(subscribe);
+    console.log('UnxiTCPBroker::onDHTSubscribe_:relayGates=<',relayGates,'>');
+  }
+  onDHTPublish_(publish,remote,from) {
+    console.log('UnxiTCPBroker::onDHTPublish_:publish=<',publish,'>');
+    console.log('UnxiTCPBroker::onDHTPublish_:remote=<',remote,'>');
+    console.log('UnxiTCPBroker::onDHTPublish_:from=<',from,'>');    
+    const relayGates = this.findRelayGates_(publish);
+    console.log('UnxiTCPBroker::onDHTPublish_:relayGates=<',relayGates,'>');
+  }
+  
+  findRelayGates_(relayMsg) {
+    const outgates = this.bucket_.near(relayMsg.address);
+    //console.log('UnxiTCPBroker::findRelayGates_:outgates=<',outgates,'>');
+    const relayGates = [];
+    for(const outgate of outgates) {
+      //console.log('UnxiTCPBroker::findRelayGates_:outgate=<',outgate,'>');
+      if(outgate !== this.node_.id) {
+        if(!relayMsg.footprint.includes(outgate)) {
+          relayGates.push(outgate);
         }
-        
+      }
+    }
+    //console.log('UnxiTCPBroker::findRelayGates_:relayGates=<',relayGates,'>');
+    return relayGates;
+  }
+
+
+  onClientMsg_(msg) {
+    //console.log('UnxiTCPBroker::onClientMsg_:msg=<',msg,'>');
+    if(msg.rq) {
+      if(msg.rq === 'publish') {
+        this.onClientPublish_(msg);
+      } else if(msg.rq === 'subscribe') {
+        this.onClientSubscribe_(msg);
+      } else if(msg.rq === 'unsubscribe') {
+        this.onClientUnsubscribe_(msg);
       } else {
-        console.log('UnxiTCPBroker::onSegmentData_: jMsg =<',jMsg,'>');
+        console.log('UnxiTCPBroker::onClientMsg_:msg=<',msg,'>');
       }
-    } catch(err) {
-      console.log('UnxiTCPBroker::onSegmentData_: err =<',err,'>');
+    } else {
+      console.log('UnxiTCPBroker::onClientMsg_:msg=<',msg,'>');
     }
   }
-  onPublishData_(jMsg,connection) {
-    console.log('UnxiTCPBroker::onPublishData_: jMsg =<',jMsg,'>');
-  }
-  onSubscribeData_(jMsg,connection) {
-    console.log('UnxiTCPBroker::onSubscribeData_: jMsg =<',jMsg,'>');
-    const ch = jMsg.c;
-    if(ch) {
-      if(!this.subscribers_[ch]) {
-        this.subscribers_[ch] = [];
-      }
-      this.subscribers_[ch].push(connection.id);
+
+  onClientSubscribe_(msg) {
+    console.log('UnxiTCPBroker::onClientSubscribe_:msg=<',msg,'>');
+    //console.log('UnxiTCPBroker::onClientSubscribe_:cb=<',cb,'>');
+    const address = utils.calcAddress(channel);
+    //console.log('UnxiTCPBroker::onClientSubscribe_:address=<',address,'>');
+    if(!this.localChannels_[address]) {
+      this.localChannels_[address] = [];
     }
-    console.log('UnxiTCPBroker::onSubscribeData_: this.subscribers_ =<',this.subscribers_,'>');
+    this.localChannels_[address].push({channel:channel,cb:cb,at:new Date()});
+    this.doDHTSubscribe_(address,channel);
   }
-  onUnsubscribeData_(jMsg,connection) {
-    console.log('UnxiTCPBroker::onUnsubscribeData_: jMsg =<',jMsg,'>');
-    const ch = jMsg.c;
-    if(ch) {
-      if(this.subscribers_[ch]) {
-        this.subscribers_[ch] = this.subscribers_[ch].filter((f)=>{return f !== connection.id});
+  doDHTSubscribe_(address,channel) {
+    const outgates = this.bucket_.near(address);
+    //console.log('UnxiTCPBroker::onApiSubscribe:outgates=<',outgates,'>');
+    if(outgates.includes(this.node_.id)) {
+      this.storage_.store(channel,address,this.node_.id);      
+    }
+    this.dht_udp_.broadcastSubscribe(outgates,channel,address);
+  }
+  onClientPublish_(publish) {
+    console.log('UnxiTCPBroker::onClientPublish_:publish=<',publish,'>');
+    const channel = publish.c;
+    const message = publish.m;
+    //console.log('UnxiTCPBroker::onClientPublish_:channel=<',channel,'>');
+    //console.log('UnxiTCPBroker::onClientPublish_:message=<',message,'>');
+    const address = utils.calcAddress(channel);
+    //console.log('UnxiTCPBroker::onClientPublish_:address=<',address,'>');
+    const channelLocals = this.localChannels_[address];
+    if(channelLocals) {
+      for(const channelLocal of channelLocals) {
+        //console.log('UnxiTCPBroker::onClientPublish_:channelLocal=<',channelLocal,'>');
+        const toPath = `/dev/shm/dht.pubsub.broker2client.${channelLocal.cb}.sock`;
+        //console.log('UnxiTCPBroker::onClientPublish_:toPath=<',toPath,'>');
+        const api_cb = this.api_cbs_[channelLocal.cb];
+        if(api_cb) {
+          this.api_.send({publisher:publish,at:new Date()},toPath);
+        } else {
+          const index = this.localChannels_[address].indexOf(channelLocal);
+          //console.log('UnxiTCPBroker::onClientPublish_:index=<',index,'>');
+          if(index > -1) {
+            this.localChannels_[address].splice(index,1);
+          }
+        }
       }
     }
-    console.log('UnxiTCPBroker::onSubscribeData_: this.subscribers_ =<',this.subscribers_,'>');
+    this.doDHTPublish_(address,channel,message,cb);
   }
+  doDHTPublish_(address,channel,message,cb) {
+    console.log('UnxiTCPBroker::doDHTPublish_:address=<',address,'>');
+    console.log('UnxiTCPBroker::doDHTPublish_:channel=<',channel,'>');
+    console.log('UnxiTCPBroker::doDHTPublish_:message=<',message,'>');
+    console.log('UnxiTCPBroker::doDHTPublish_:cb=<',cb,'>');
+    const outgates = this.bucket_.near(address);
+    //console.log('UnxiTCPBroker::onApiSubscribe:outgates=<',outgates,'>');
+    if(outgates.includes(this.node_.id)) {
+      const self = this;
+      this.storage_.fetch(address,(endpoint)=> {
+        self.onDHTSubscribeHint_(endpoint,message,channel,cb);
+      });
+    }
+    this.dht_udp_.broadcastPublish(outgates,channel,address,message,cb);    
+  }
+
+  onDHTSubscribeHint_(endpoints,msgPub,channel,cb) {
+    console.log('UnxiTCPBroker::onDHTSubscribeHint_:endpoints=<',endpoints,'>');
+    console.log('UnxiTCPBroker::onDHTSubscribeHint_:msgPub=<',msgPub,'>');
+    for(const endpoint of endpoints) {
+      const msgDHT = {
+        pubReal:{
+          channel:channel,
+          msg:msgPub,
+          cb,cb
+        },
+        dist:endpoint.node
+      }
+      console.log('UnxiTCPBroker::onDHTSubscribeHint_:msgDHT=<',msgDHT,'>');
+    }
+  }
+  
 };
 module.exports = UnxiTCPBroker;
-
-const test = new UnxiTCPBroker();
-
