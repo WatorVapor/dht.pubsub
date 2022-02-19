@@ -6,7 +6,7 @@ const execSync = require('child_process').execSync;
 const debug_ = true;
 const SOCK_PATH = '/tmp/dht.pubsub.sock';
 class UnxiTCPBroker {
-  constructor() {
+  constructor(config) {
     this.tcpReadBuffer_ = '';
     this.subscribers_ = {};
     this.connections_ = {};
