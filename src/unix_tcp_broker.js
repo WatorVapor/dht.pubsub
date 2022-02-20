@@ -98,9 +98,9 @@ class UnxiTCPBroker {
     console.log('UnxiTCPBroker::onClientRequest_:address=<',address,'>');
     const dhtOut = Object.assign(msg,{});
     dhtOut.cid = address;
+    dhtOut.fp = [this.node_.id];
     console.log('UnxiTCPBroker::onClientRequest_:dhtOut=<',dhtOut,'>');
     const dhtOutSign = this.node_.sign(dhtOut);
-    dhtOutSign.fp = [this.node_.id];
     console.log('UnxiTCPBroker::onClientRequest_:dhtOutSign=<',dhtOutSign,'>');
   }
   onClientSubscribe_(msg) {

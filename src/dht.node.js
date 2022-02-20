@@ -31,7 +31,6 @@ class DHTNode {
     let now = new Date();
     const signedMsg = {};
     signedMsg.p = msg;
-    signedMsg.t = this.config_.trap;
     signedMsg.s = {};
     signedMsg.s.t = now.toGMTString();
     signedMsg.s.m = now.getMilliseconds();
