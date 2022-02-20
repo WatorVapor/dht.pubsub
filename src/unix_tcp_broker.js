@@ -77,6 +77,7 @@ class UnxiTCPBroker {
   onClientMsg_(msg) {
     //console.log('UnxiTCPBroker::onClientMsg_:msg=<',msg,'>');
     if(msg.rq) {
+      this.onClientRequest_(msg);
       if(msg.rq === 'publish') {
         this.onClientPublish_(msg);
       } else if(msg.rq === 'subscribe') {
@@ -90,18 +91,30 @@ class UnxiTCPBroker {
       console.log('UnxiTCPBroker::onClientMsg_:msg=<',msg,'>');
     }
   }
-
+  onClientRequest_(msg) {
+    console.log('UnxiTCPBroker::onClientRequest_:msg=<',msg,'>');
+    const channel = msg.ch;
+    const address = utils.calcAddress(channel);
+    console.log('UnxiTCPBroker::onClientRequest_:address=<',address,'>');
+    const dhtOut = Object.assign(msg,{});
+    dhtOut.cid = address;
+    console.log('UnxiTCPBroker::onClientRequest_:dhtOut=<',dhtOut,'>');
+    const dhtOutSign = this.node_.sign(dhtOut);
+    dhtOutSign.fp = [this.node_.id];
+    console.log('UnxiTCPBroker::onClientRequest_:dhtOutSign=<',dhtOutSign,'>');
+  }
   onClientSubscribe_(msg) {
     console.log('UnxiTCPBroker::onClientSubscribe_:msg=<',msg,'>');
-    //console.log('UnxiTCPBroker::onClientSubscribe_:cb=<',cb,'>');
-    const address = utils.calcAddress(channel);
-    //console.log('UnxiTCPBroker::onClientSubscribe_:address=<',address,'>');
-    if(!this.localChannels_[address]) {
-      this.localChannels_[address] = [];
-    }
-    this.localChannels_[address].push({channel:channel,cb:cb,at:new Date()});
-    this.doDHTSubscribe_(address,channel);
   }
+
+  onClientUnsubscribe_(msg) {
+    console.log('UnxiTCPBroker::onClientUnsubscribe_:msg=<',msg,'>');
+  }
+  onClientPublish_(msg) {
+    console.log('UnxiTCPBroker::onClientPublish_:msg=<',msg,'>');
+  }
+  
+  /*
   doDHTSubscribe_(address,channel) {
     const outgates = this.bucket_.near(address);
     //console.log('UnxiTCPBroker::onApiSubscribe:outgates=<',outgates,'>');
@@ -110,33 +123,6 @@ class UnxiTCPBroker {
     }
     this.dht_udp_.broadcastSubscribe(outgates,channel,address);
   }
-  onClientPublish_(publish) {
-    console.log('UnxiTCPBroker::onClientPublish_:publish=<',publish,'>');
-    const channel = publish.c;
-    const message = publish.m;
-    //console.log('UnxiTCPBroker::onClientPublish_:channel=<',channel,'>');
-    //console.log('UnxiTCPBroker::onClientPublish_:message=<',message,'>');
-    const address = utils.calcAddress(channel);
-    //console.log('UnxiTCPBroker::onClientPublish_:address=<',address,'>');
-    const channelLocals = this.localChannels_[address];
-    if(channelLocals) {
-      for(const channelLocal of channelLocals) {
-        //console.log('UnxiTCPBroker::onClientPublish_:channelLocal=<',channelLocal,'>');
-        const toPath = `/dev/shm/dht.pubsub.broker2client.${channelLocal.cb}.sock`;
-        //console.log('UnxiTCPBroker::onClientPublish_:toPath=<',toPath,'>');
-        const api_cb = this.api_cbs_[channelLocal.cb];
-        if(api_cb) {
-          this.api_.send({publisher:publish,at:new Date()},toPath);
-        } else {
-          const index = this.localChannels_[address].indexOf(channelLocal);
-          //console.log('UnxiTCPBroker::onClientPublish_:index=<',index,'>');
-          if(index > -1) {
-            this.localChannels_[address].splice(index,1);
-          }
-        }
-      }
-    }
-    this.doDHTPublish_(address,channel,message,cb);
   }
   doDHTPublish_(address,channel,message,cb) {
     console.log('UnxiTCPBroker::doDHTPublish_:address=<',address,'>');
@@ -169,6 +155,7 @@ class UnxiTCPBroker {
       console.log('UnxiTCPBroker::onDHTSubscribeHint_:msgDHT=<',msgDHT,'>');
     }
   }
+  */
   
 };
 module.exports = UnxiTCPBroker;
