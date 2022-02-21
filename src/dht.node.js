@@ -51,8 +51,7 @@ class DHTNode {
   verify(msgJson) {
     //console.log('DHTNode::verify msgJson=<',msgJson,'>');
     const now = new Date();
-    const msgTs = new Date(msgJson.s.t);
-    msgTs.setMilliseconds(msgJson.s.m)
+    const msgTs = new Date(msgJson.s[0].t);
     const escape_time = now -msgTs;
     //console.log('DHTNode::verify escape_time=<',escape_time,'>');
     if(escape_time > iConstMessageOutDateInMs) {
@@ -80,8 +79,10 @@ class DHTNode {
     }
     return false;
   }
+  
+  
   calcID(msgJson) {
-    const keyRipemd = CryptoJS.RIPEMD160(msgJson.s.k).toString(CryptoJS.enc.Hex);
+    const keyRipemd = CryptoJS.RIPEMD160(msgJson.s[0].k).toString(CryptoJS.enc.Hex);
     const keyBuffer = Buffer.from(keyRipemd,'hex');
     return base32.encode(keyBuffer,bs32Option);
   }
