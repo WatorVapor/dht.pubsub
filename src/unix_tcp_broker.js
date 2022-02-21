@@ -92,23 +92,30 @@ class UnxiTCPBroker {
     }
   }
   onClientRequest_(msg) {
-    console.log('UnxiTCPBroker::onClientRequest_:msg=<',msg,'>');
+    //console.log('UnxiTCPBroker::onClientRequest_:msg=<',msg,'>');
     const channel = msg.ch;
     const address = utils.calcAddress(channel);
-    console.log('UnxiTCPBroker::onClientRequest_:address=<',address,'>');
+    //console.log('UnxiTCPBroker::onClientRequest_:address=<',address,'>');
     const dhtOut = Object.assign({},msg);
     dhtOut.cid = address
     dhtOut.fp = [this.node_.id];
-    console.log('UnxiTCPBroker::onClientRequest_:dhtOut=<',dhtOut,'>');    
+    //console.log('UnxiTCPBroker::onClientRequest_:dhtOut=<',dhtOut,'>');    
     const dhtOutSign = this.node_.sign(dhtOut);
-    console.log('UnxiTCPBroker::onClientRequest_:dhtOutSign=<',dhtOutSign,'>');
+    //console.log('UnxiTCPBroker::onClientRequest_:dhtOutSign=<',dhtOutSign,'>');
 
     const dhtOut2 = Object.assign({},dhtOut);
     const address2 = utils.calcAddress(address);
     dhtOut2.cid = address2
-    console.log('UnxiTCPBroker::onClientRequest_:dhtOut2=<',dhtOut2,'>');
+    //console.log('UnxiTCPBroker::onClientRequest_:dhtOut2=<',dhtOut2,'>');
     const dhtOut2Sign = this.node_.sign(dhtOut2);
-    console.log('UnxiTCPBroker::onClientRequest_:dhtOut2Sign=<',dhtOut2Sign,'>');
+    //console.log('UnxiTCPBroker::onClientRequest_:dhtOut2Sign=<',dhtOut2Sign,'>');
+
+    const dhtOut3 = Object.assign({},dhtOut);
+    const address3 = utils.calcAddress(address2);
+    dhtOut3.cid = address3
+    //console.log('UnxiTCPBroker::onClientRequest_:dhtOut3=<',dhtOut3,'>');
+    const dhtOut3Sign = this.node_.sign(dhtOut3);
+    //console.log('UnxiTCPBroker::onClientRequest_:dhtOut3Sign=<',dhtOut3Sign,'>');
 
   }
   onClientSubscribe_(msg) {
