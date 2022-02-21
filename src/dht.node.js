@@ -33,8 +33,7 @@ class DHTNode {
     signedMsg.p = msg;
     signedMsg.s = [];
     const new_sign = {};
-    new_sign.t = now.toGMTString();
-    new_sign.m = now.getMilliseconds();
+    new_sign.t = now.toISOString();
     new_sign.k = this.keyMaster.publicKey;
     signedMsg.s.push(new_sign);
     
@@ -50,6 +49,7 @@ class DHTNode {
   }
 
   verify(msgJson) {
+    //console.log('DHTNode::verify msgJson=<',msgJson,'>');
     const now = new Date();
     const msgTs = new Date(msgJson.s.t);
     msgTs.setMilliseconds(msgJson.s.m)
@@ -65,9 +65,9 @@ class DHTNode {
     let msgHash = CryptoJS.RIPEMD160(msgStr).toString(CryptoJS.enc.Base64);
     //console.log('DHTNode::verify msgHash=<',msgHash,'>');
     //console.log('DHTNode::verify msgJson=<',msgJson,'>');
-    const pubKey = nacl.util.decodeBase64(msgJson.s.k);
+    const pubKey = nacl.util.decodeBase64(msgJson.s[0].k);
     //console.log('DHTNode::verify pubKey=<',pubKey,'>');
-    const signedVal = nacl.util.decodeBase64(msgJson.v);
+    const signedVal = nacl.util.decodeBase64(msgJson.v[0]);
     //console.log('DHTNode::verify signedVal=<',signedVal,'>');
     const openedMsg = nacl.sign.open(signedVal,pubKey);
     //console.log('DHTNode::verify openedMsg=<',openedMsg,'>');

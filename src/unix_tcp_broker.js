@@ -97,11 +97,19 @@ class UnxiTCPBroker {
     const address = utils.calcAddress(channel);
     console.log('UnxiTCPBroker::onClientRequest_:address=<',address,'>');
     const dhtOut = Object.assign(msg,{});
-    dhtOut.cid = address;
+    dhtOut.cid = address
     dhtOut.fp = [this.node_.id];
-    console.log('UnxiTCPBroker::onClientRequest_:dhtOut=<',dhtOut,'>');
+    console.log('UnxiTCPBroker::onClientRequest_:dhtOut=<',dhtOut,'>');    
     const dhtOutSign = this.node_.sign(dhtOut);
     console.log('UnxiTCPBroker::onClientRequest_:dhtOutSign=<',dhtOutSign,'>');
+
+    const dhtOut2 = Object.assign(dhtOut,{});
+    const address2 = utils.calcAddress(address);
+    dhtOut2.cid = address2
+    console.log('UnxiTCPBroker::onClientRequest_:dhtOut2=<',dhtOut2,'>');
+    const dhtOut2Sign = this.node_.sign(dhtOut2);
+    console.log('UnxiTCPBroker::onClientRequest_:dhtOut2Sign=<',dhtOut2Sign,'>');
+
   }
   onClientSubscribe_(msg) {
     console.log('UnxiTCPBroker::onClientSubscribe_:msg=<',msg,'>');
