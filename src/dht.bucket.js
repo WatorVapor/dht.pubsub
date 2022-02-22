@@ -90,6 +90,7 @@ class DHTBucket {
         this.buckets_[bucketIndex].splice(hint,1);
       }
     }
+    console.log('DHTBucket::update this.buckets_flat_=<',this.buckets_flat_,'>');
   }
   near(address) {
     console.log('DHTBucket::near address=<',address,'>');
