@@ -15,6 +15,9 @@ const MaxBitBufOf160 = bitwise.buffer.create(MaxBitOf160);
 const MaxBigIntOf160 = bigInt(MaxBitBufOf160.toString('hex'),16);
 //console.log(':: MaxBigIntOf160=<',MaxBigIntOf160,'>');
 
+const iConstBucketPerBit = 160;
+const iConstBucketPerBitFloor = 2;
+
 class DHTBucket {
   constructor(node) {
     //console.log('DHTBucket::constructor node=<',node,'>');
@@ -28,13 +31,20 @@ class DHTBucket {
       this.buckets_.push([]);
     }
     //console.log('DHTBucket::constructor this.buckets_=<',this.buckets_,'>');
+    let sumBucketCap = 0;
+    for(let index = 0;index <this.buckets_.length ;index++) {
+      const bitBucketCap = Math.floor((idBit.length - index)/iConstBucketPerBit) + iConstBucketPerBitFloor;
+      console.log('DHTBucket::update bitBucketCap=<',bitBucketCap,'>');
+      sumBucketCap += bitBucketCap;
+    }
+    console.log('DHTBucket::update sumBucketCap=<',sumBucketCap,'>');
     this.buckets_flat_ = [];
     this.buckets_flat_.push(this.id_);
   }
   update(node,endpoint) {
     //console.log('DHTBucket::update node=<',node,'>');
     //console.log('DHTBucket::update endpoint=<',endpoint,'>');
-    if(endpoint.ttl > 1000 && endpoint.trap) {
+    if(endpoint.ttl > 1000 && endpoint.trap == false) {
       return;
     }
     const escape_ms = new Date() - new Date(endpoint.at);
@@ -47,10 +57,11 @@ class DHTBucket {
     //console.log('DHTBucket::update nodeBuf=<',nodeBuf,'>');
     const nodeBit = bitwise.buffer.read(nodeBuf);
     //console.log('DHTBucket::update nodeBit=<',nodeBit,'>');
+    //console.log('DHTBucket::update nodeBit.length=<',nodeBit.length,'>');
     const firstAt = nodeBit.indexOf(1);
     //console.log('DHTBucket::update firstAt=<',firstAt,'>');
     if(firstAt > -1) {
-      const bucketCap = Math.floor((nodeBit.length - firstAt)/16) + 2;
+      const bucketCap = Math.floor((nodeBit.length - firstAt)/iConstBucketPerBit) + iConstBucketPerBitFloor;
       //console.log('DHTBucket::update bucketCap=<',bucketCap,'>');
       if(!this.buckets_[firstAt].includes(node)  
         && this.buckets_[firstAt].length < bucketCap
@@ -59,7 +70,8 @@ class DHTBucket {
         this.buckets_flat_.push(node);
       }
     }
-    //console.log('DHTBucket::update this.buckets_flat_=<',this.buckets_flat_,'>');
+    //console.log('DHTBucket::update this.buckets_=<',this.buckets_,'>');
+    console.log('DHTBucket::update this.buckets_flat_=<',this.buckets_flat_,'>');
   }
   remove(node) {
     //console.log('DHTBucket::remove node=<',node,'>');

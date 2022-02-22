@@ -216,6 +216,7 @@ class DHTUdp {
       const pong = {
         pong:{
           s:ping.s,
+          trap:this.conf_.trap,
           r:new Date()
         }
       };
@@ -234,6 +235,7 @@ class DHTUdp {
       //console.log('DHTUdp::onDHTPong:ttl=<',ttl,'>');
       endpoint.ttl = ttl;
       endpoint.at = pong.r;
+      endpoint.trap = pong.trap;
       //console.log('DHTUdp::onDHTPong:nodeFrom=<',nodeFrom,'>');
       //console.log('DHTUdp::onDHTPong:endpoint=<',endpoint,'>');
       this.bucket_.update(nodeFrom,endpoint);
@@ -275,6 +277,7 @@ class DHTUdp {
         //console.log('DHTUdp::doDHTPing_:nodeKey=<',nodeKey,'>');
         const pingDHT = {
           ping:{
+            trap:this.conf_.trap,
             s:new Date()
           }
         };
