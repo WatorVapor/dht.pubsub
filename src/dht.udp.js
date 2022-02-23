@@ -5,6 +5,7 @@ const debug_ = true;
 const NODE_LOST_TIME_OUT_MS = 5*1000;
 const NODE_LOST_TIME_OUT_MAX = 10;
 
+const iConstAliveCheckIntervalMs = 1*1000;
 class DHTUdp {
   constructor(conf,node,bucket,onMsg) {
     if(debug_) {
@@ -18,7 +19,7 @@ class DHTUdp {
     this.node_ = node;    
     this.bucket_ = bucket;
     this.worldNodes_ = {};
-    setInterval(this.doDHTPing_.bind(this),1*1000);
+    setInterval(this.doDHTPing_.bind(this),iConstAliveCheckIntervalMs);
   }
   
   bindSocket(portc,portd) {
@@ -178,17 +179,19 @@ class DHTUdp {
     const portd = entry.portd;
     //console.log('DHTUdp::onDHTEntry:address=<',address,'>');
     //console.log('DHTUdp::onDHTEntry:portc=<',portc,'>');
+    const tp = new Date().toISOString();
     this.worldNodes_[nodeFrom] = {
       address:address,
       portc:portc,
       portd:portd,
       trap:entry.trap,
-      at:new Date().toISOString()
+      start:tp,
+      at:tp
     }
     const welcome = {
       welcome:{
         nodes:this.worldNodes_,
-        at:new Date().toISOString()
+        at:tp
       }
     };
     this.send(welcome,portc,address);
@@ -268,6 +271,7 @@ class DHTUdp {
   
   doDHTPing_() {
     //console.log('DHTUdp::doDHTPing_:this.worldNodes_=<',this.worldNodes_,'>');
+    const aliveOutTimes = [];
     for(const nodeKey in this.worldNodes_) {
       //console.log('DHTUdp::doDHTPing_:nodeKey=<',nodeKey,'>');
       const node = this.worldNodes_[nodeKey];
@@ -282,7 +286,21 @@ class DHTUdp {
           }
         };
         this.send(pingDHT,node.portc,node.address);
+        
+        const escape_ms = new Date() - new Date(node.at);
+        //console.log('DHTUdp::doDHTPing_:escape_ms=<',escape_ms,'>');
+        if(escape_ms > 2 * iConstAliveCheckIntervalMs && node.at !== node.start) {
+          //console.log('DHTUdp::doDHTPing_:node=<',node,'>');
+          //console.log('DHTUdp::doDHTPing_:nodeKey=<',nodeKey,'>');
+          //console.log('DHTUdp::doDHTPing_:escape_ms=<',escape_ms,'>');
+          aliveOutTimes.push(nodeKey);
+        }
       }
+    }
+    console.log('DHTUdp::doDHTPing_:aliveOutTimes=<',aliveOutTimes,'>');
+    for(const outTime of aliveOutTimes) {
+      this.bucket_.remove(outTime);
+      delete this.worldNodes_[outTime];
     }
   }
 
