@@ -6,12 +6,17 @@ const execSync = require('child_process').execSync;
 const debug_ = true;
 const SOCK_PATH = '/tmp/dht.pubsub.sock';
 class UnxiTCPService {
-  constructor(cb) {
+  constructor(cb,sock) {
     this.cb_ = cb;    
     this.tcpReadBuffer_ = '';
     this.subscribers_ = {};
     this.connections_ = {};
-    const resultRM = execSync(`rm -rf ${SOCK_PATH}`);
+    if(sock) {
+      this.sockPath_ = sock;
+    } else {
+      this.sockPath_ = SOCK_PATH;
+    }
+    const resultRM = execSync(`rm -rf ${this.sockPath_}`);
     if(debug_) {
       console.log('UnxiTCPService::constructor: resultRM =<',resultRM.toString(),'>');
     }
@@ -30,7 +35,7 @@ class UnxiTCPService {
         self.onTCPEnd_(connection);
       });
     });
-    this.server_.listen(SOCK_PATH);
+    this.server_.listen(this.sockPath_);
   }
   onTCPData_(data,connection) {
     //console.log('UnxiTCPService::onTCPData_: data =<',data,'>');

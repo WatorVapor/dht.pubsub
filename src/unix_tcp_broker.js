@@ -127,50 +127,6 @@ class UnxiTCPBroker {
   }
   onClientPublish_(msg) {
     console.log('UnxiTCPBroker::onClientPublish_:msg=<',msg,'>');
-  }
-  
-  /*
-  doDHTSubscribe_(address,channel) {
-    const outgates = this.bucket_.near(address);
-    //console.log('UnxiTCPBroker::onApiSubscribe:outgates=<',outgates,'>');
-    if(outgates.includes(this.node_.id)) {
-      this.storage_.store(channel,address,this.node_.id);      
-    }
-    this.dht_udp_.broadcastSubscribe(outgates,channel,address);
-  }
-  }
-  doDHTPublish_(address,channel,message,cb) {
-    console.log('UnxiTCPBroker::doDHTPublish_:address=<',address,'>');
-    console.log('UnxiTCPBroker::doDHTPublish_:channel=<',channel,'>');
-    console.log('UnxiTCPBroker::doDHTPublish_:message=<',message,'>');
-    console.log('UnxiTCPBroker::doDHTPublish_:cb=<',cb,'>');
-    const outgates = this.bucket_.near(address);
-    //console.log('UnxiTCPBroker::onApiSubscribe:outgates=<',outgates,'>');
-    if(outgates.includes(this.node_.id)) {
-      const self = this;
-      this.storage_.fetch(address,(endpoint)=> {
-        self.onDHTSubscribeHint_(endpoint,message,channel,cb);
-      });
-    }
-    this.dht_udp_.broadcastPublish(outgates,channel,address,message,cb);    
-  }
-
-  onDHTSubscribeHint_(endpoints,msgPub,channel,cb) {
-    console.log('UnxiTCPBroker::onDHTSubscribeHint_:endpoints=<',endpoints,'>');
-    console.log('UnxiTCPBroker::onDHTSubscribeHint_:msgPub=<',msgPub,'>');
-    for(const endpoint of endpoints) {
-      const msgDHT = {
-        pubReal:{
-          channel:channel,
-          msg:msgPub,
-          cb,cb
-        },
-        dist:endpoint.node
-      }
-      console.log('UnxiTCPBroker::onDHTSubscribeHint_:msgDHT=<',msgDHT,'>');
-    }
-  }
-  */
-  
+  }  
 };
 module.exports = UnxiTCPBroker;
